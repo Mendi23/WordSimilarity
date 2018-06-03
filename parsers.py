@@ -21,16 +21,16 @@ class InputParser:
     def create_bank_set(self, colNum):
         return frozenset(itertools.chain.from_iterable(self.iter_cols(colNum)))
 
-    def create_taggs_counter(self):
-        tagsCount = defaultdict(Counter)
-        for (i, j) in self.iter_cols((2,3)):
-            tagsCount[j][i] += 1
-        return tagsCount
-
-    def get_tagged_examples(self, k=3):
-        tagsCount = self.create_taggs_counter()
-        for tag, count in tagsCount.items():
-            yield (tag, map(lambda x: x[0], count.most_common(k)))
+    # def create_taggs_counter(self):
+    #     tagsCount = defaultdict(Counter)
+    #     for (i, j) in self.iter_cols((2,3)):
+    #         tagsCount[j][i] += 1
+    #     return tagsCount
+    #
+    # def get_tagged_examples(self, k=3):
+    #     tagsCount = self.create_taggs_counter()
+    #     for tag, count in tagsCount.items():
+    #         yield (tag, map(lambda x: x[0], count.most_common(k)))
 
 
 def store_list(listToStore, filePath):
