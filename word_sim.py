@@ -68,13 +68,13 @@ class SkipGram:
 if __name__ == '__main__':
     input_parsed = InputParser()
 
-    filterClass = SimpleFilter(Counter(input_parsed.iter_all(2)))
+    # filterClass = SimpleFilter(Counter(input_parsed.iter_all(2)))
 
     cooccurrence = get_cooccurrence_from_iter(SentenceContext(input_parsed))
-    store_cooccurrence(SENTENCE_OUT, cooccurrence, filterClass.filter)
+    store_cooccurrence(SENTENCE_OUT, cooccurrence)#, filterClass.filter)
 
     cooccurrence = get_cooccurrence_from_iter(SkipGram(input_parsed))
-    store_cooccurrence(SKIPGRAM_OUT, cooccurrence, filterClass.filter)
+    store_cooccurrence(SKIPGRAM_OUT, cooccurrence)#, filterClass.filter)
 
     unique_words = sorted(input_parsed.create_bank_set(2))
     store_list(unique_words, "words.out")

@@ -2,18 +2,21 @@ from functools import wraps
 from time import time
 from datetime import datetime
 
+def _prnt(s):
+    print(s)
 
 def measure(method):
     @wraps(method)
     def wrapper(*args, **kwargs):
         mname = method.__name__
         s = time()
-        print(f"Start  {mname} at: {datetime.now()}")
-        method(*args, **kwargs)
+        _prnt(f"Start  {mname} at: {datetime.now()}")
+        res = method(*args, **kwargs)
         e = time()
         mins, secs = divmod(e - s, 60)
-        print(f"Finish {mname} at: {datetime.now()}")
-        print(f"Total time of {mname}: {mins:02.0f}:{secs:05.2f}s")
+        _prnt(f"Finish {mname} at: {datetime.now()}")
+        _prnt(f"Total time of {mname}: {mins:02.0f}:{secs:05.2f}s")
+
+        return res
 
     return wrapper
-

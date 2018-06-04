@@ -14,6 +14,8 @@ class InputParser:
         self.inputFile = inputFile
 
     def iter_cols(self, cols):
+        if not cols:
+            cols = tuple(range(8))
         index = np.array(cols)
         retVal = []
         with open(self.inputFile, encoding="utf8") as f:
@@ -43,8 +45,8 @@ def load_dict(filePath, modifier=None):
         lines = (line.strip().split(DELIM) for line in f)
         return {pair[0]: modifier(pair[1]) for pair in lines if pair}
 
-def store_list(listToStore:[], filePath):
-    with open(filePath, "w", encoding="utf8") as f:
+def store_list(listToStore:[], filePath, mode="w"):
+    with open(filePath, mode, encoding="utf8") as f:
         for i in listToStore:
             f.write(i+'\n')
 

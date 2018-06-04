@@ -1,13 +1,14 @@
 import operator
+from collections import Counter
 
 from helpers.measuretime import measure
-from parsers import InputParser, store_dict, load_dict
+from parsers import InputParser, store_dict, load_dict, store_list, load_list
 
-WORDS_INDEX_PATH = "words2index.data"
+WORDS_INDEX_PATH = "words2index.data.out"
+WORDS_COUNT_PATH = "words_count.data.out"
 
-def _create_words_dict(input_parsed):
-    unique_words = input_parsed.create_bank_set(2)
-    words_dict = dict(zip(unique_words, range(len(unique_words))))
+def _create_words2index(keys):
+    words_dict = dict(zip(keys, range(len(keys))))
     return words_dict
 
 def create_r_dict(words_dict):
@@ -23,13 +24,21 @@ def get_transform_sentences(wordsDict, input_parsed):
         yield transform_line(line, wordsDict)
 
 @measure
-def load_words2dict():
-    return load_dict(WORDS_INDEX_PATH, int)
+def load_words2index():
+    words = load_list(WORDS_INDEX_PATH)
+    return _create_words2index(words)
+    # return load_dict(WORDS_INDEX_PATH, int)
+
+@measure
+def load_words_count():
+    return Counter(load_dict(WORDS_COUNT_PATH, int))
 
 @measure
 def main():
     input_parsed = InputParser()
-    store_dict(_create_words_dict(input_parsed), WORDS_INDEX_PATH)
+    words_count = Counter(input_parsed.iter_all(2))
+    store_dict(words_count, WORDS_COUNT_PATH)
+    store_list(words_count.keys(), WORDS_INDEX_PATH)
 
 if __name__ == '__main__':
     main()
