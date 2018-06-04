@@ -1,10 +1,16 @@
-from collections import defaultdict, Counter
 import itertools
 
 import numpy as np
 
+# INPUT_FILE = sys.argv[1]
+INPUT_FILE = "wikipedia.sample.trees.lemmatized"
+# INPUT_FILE = "wikipedia.tinysample.trees.lemmatized.txt"
+
+DELIM = '\t'
+
 class InputParser:
-    def __init__(self, inputFile):
+
+    def __init__(self, inputFile=INPUT_FILE):
         self.inputFile = inputFile
 
     def iter_cols(self, cols):
@@ -18,33 +24,37 @@ class InputParser:
                     yield retVal
                     retVal = []
 
+    def iter_all(self, colNum):
+        return itertools.chain.from_iterable(self.iter_cols(colNum))
+
     def create_bank_set(self, colNum):
-        return frozenset(itertools.chain.from_iterable(self.iter_cols(colNum)))
+        return frozenset(self.iter_all(colNum))
 
-    # def create_taggs_counter(self):
-    #     tagsCount = defaultdict(Counter)
-    #     for (i, j) in self.iter_cols((2,3)):
-    #         tagsCount[j][i] += 1
-    #     return tagsCount
-    #
-    # def get_tagged_examples(self, k=3):
-    #     tagsCount = self.create_taggs_counter()
-    #     for tag, count in tagsCount.items():
-    #         yield (tag, map(lambda x: x[0], count.most_common(k)))
+def store_dict(dictToStore:{}, filePath):
+    with open(filePath, "w", encoding="utf8") as f:
+        for key, val in dictToStore.items():
+            f.write(f"{key}{DELIM}{val}\n")
 
 
-def store_list(listToStore, filePath):
+def load_dict(filePath, modifier=None):
+    if not modifier:
+        modifier = lambda x: x
+    with open(filePath, "r", encoding="utf8") as f:
+        lines = (line.strip().split(DELIM) for line in f)
+        return {pair[0]: modifier(pair[1]) for pair in lines if pair}
+
+def store_list(listToStore:[], filePath):
     with open(filePath, "w", encoding="utf8") as f:
         for i in listToStore:
             f.write(i+'\n')
-
 
 def load_list(filePath):
     with open(filePath, encoding="utf8") as f:
         return [line.strip() for line in f]
 
-def store_cooccurrence(filePath, counts):
+def store_cooccurrence(filePath, counts, filter=None):
     with open(filePath, "w", encoding="utf8") as f:
         for word, contextCounts in counts.items():
             for context, count in contextCounts.items():
-                f.write(f"{word} {context} {count}\n")
+                if filter and filter(word, context, count): continue
+                f.write(f"{word}{DELIM}{context}{DELIM}{count}\n")

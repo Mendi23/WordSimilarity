@@ -1,9 +1,11 @@
 import sys
 from collections import defaultdict, Counter
+
+from filters import SimpleFilter
 from parsers import InputParser, store_list, store_cooccurrence
 
-input_file = sys.argv[1]
-input_parsed = InputParser(input_file)
+SENTENCE_OUT = "sentence.out"
+SKIPGRAM_OUT = "skipgram.out"
 
 def get_cooccurrence_from_iter(iterPairs):
     counts = defaultdict(Counter)
@@ -12,8 +14,9 @@ def get_cooccurrence_from_iter(iterPairs):
             counts[word][context] += 1
     return counts
 
+
 class SentenceContext:
-    def __init__(self):
+    def __init__(self, input_parsed):
         self.iter = iter(input_parsed.iter_cols(2)).__iter__()
         self.cur = []
         self.index = 0
@@ -30,22 +33,26 @@ class SentenceContext:
 
 
 class SkipGram:
-    def __init__(self, functionTags):
-        self.excludeTags = functionTags
-        # TODO: is it better to use col 3 or col 7?
+    FunctionWordsFilePath = "functionWords.data"
+
+    def __init__(self, input_parsed):
+        funcWordsLines = (w.split('#', 1)[0].strip()
+                          for w in open(self.FunctionWordsFilePath).readlines())
+        self.excludeWords = [w for w in funcWordsLines if w]
+
+        self.excludeTags = ["DT", "IN", "PRP$", "WP$", "$", "CC", "PRP"]
+
         self.iter = iter(input_parsed.iter_cols((2, 3))).__iter__()
         self.cur = []
         self.index = 0
-        # TODO: can function word be target word or are we skipping them altogether? right now
-        # skipping, but it's possible we need to save original string and add second insdex
-        # one for the target word (all sentence) and one for the skipgram window (skip function)
 
     def __iter__(self):
         return self
 
     def _filter_function_words(self, sentence):
-        _filter = filter(lambda x: x[1] not in self.excludeTags, sentence)
-        return list(map(lambda x: x[0], _filter))
+        return [pair[0] for pair in sentence
+                if pair[0] not in self.excludeWords
+                and pair[1] not in self.excludeTags]
 
     def __next__(self):
         if self.index == len(self.cur):
@@ -57,12 +64,17 @@ class SkipGram:
         return self.cur[self.index - 1], self.cur[lval:self.index + 2]
 
 
-cooccurrence = get_cooccurrence_from_iter(SentenceContext())
-store_cooccurrence("sentence.out", cooccurrence)
+# ====================================================
+if __name__ == '__main__':
+    input_parsed = InputParser()
 
-# TODO: this is just a demo, need a better function words classification
-cooccurrence = get_cooccurrence_from_iter(SkipGram(['DT', 'IN', 'JJ']))
-store_cooccurrence("skipgram.out", cooccurrence)
+    filterClass = SimpleFilter(Counter(input_parsed.iter_all(2)))
 
-unique_words = input_parsed.create_bank_set(2)
-store_list(unique_words, "words.out")
+    cooccurrence = get_cooccurrence_from_iter(SentenceContext(input_parsed))
+    store_cooccurrence(SENTENCE_OUT, cooccurrence, filterClass.filter)
+
+    cooccurrence = get_cooccurrence_from_iter(SkipGram(input_parsed))
+    store_cooccurrence(SKIPGRAM_OUT, cooccurrence, filterClass.filter)
+
+    unique_words = sorted(input_parsed.create_bank_set(2))
+    store_list(unique_words, "words.out")
