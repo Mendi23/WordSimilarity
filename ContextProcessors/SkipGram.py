@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 
 from ContextProcessors.BaseContext import BaseContext
@@ -10,6 +12,7 @@ class SkipGram(BaseContext):
 
     def __init__(self):
         super().__init__(SKIPGRAM_OUT)
+        self.regex = re.compile("[a-z]", re.I)
 
         funcWordsLines = (w.split('#', 1)[0].strip()
                           for w in open(self.FunctionWordsFilePath).readlines())
@@ -19,7 +22,8 @@ class SkipGram(BaseContext):
 
     def _isfunction(self, w):
         return w[2] in self.excludeWords \
-               or w[3] in self.excludeTags
+               or w[3] in self.excludeTags \
+                or not self.regex.search(w[2])
 
     def _getwindow(self, i, cur):
         left = []

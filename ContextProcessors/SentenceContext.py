@@ -12,11 +12,15 @@ class SentenceContext(BaseContext):
         self.regex = re.compile("[a-z]", re.I)
 
     def _sentence_words(self, sentence_words):
-        return np.array((w for w in sentence_words if self.regex.search(w)))
+        return np.array([w for w in sentence_words if self.regex.search(w)])
 
     def process(self, index, cur):
-        # take only column 2
+        # take only column 2 and delete myself from the sentence
         sentence_except_me = np.delete(cur[:, 2], index)
-        return cur[index][2], self._sentence_words(sentence_except_me)
+        word = cur[index][2]
+        if self.regex.search(word):
+            return word, self._sentence_words(sentence_except_me)
+
+        return None
 
 

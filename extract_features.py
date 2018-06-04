@@ -20,7 +20,7 @@ def main():
     with SentenceContext() as c1, SkipGram() as c2:
         for line in input_parsed.iter_cols(None):
             line = np.array(line)
-            for i, context in product(range(len(line)), [c2]):
+            for i, context in product(range(len(line)), [c1, c2]):
                 append_to_file(context.fileobj, context.process(i, line))
 
 
