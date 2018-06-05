@@ -1,19 +1,43 @@
-import sys
 from collections import defaultdict, Counter
-
-from filters import SimpleFilter
+import numpy as np
 from helpers.measuretime import measure
 from parsers import InputParser, store_list, store_cooccurrence
 
 SENTENCE_OUT = "sentence.out"
+SENTENCE_VOC = "sentence.voc"
 SKIPGRAM_OUT = "skipgram.out"
+SKIPGRAM_VOC = "skipgram.voc"
+
+LEMMA_THRESHOLD = 100
+# FEATURE_THRESHOLD = 50
+COOCCURRENCE_THRESHOLD = 5
+
 
 def get_cooccurrence_from_iter(iterPairs):
-    counts = defaultdict(Counter)
+    cooccurrence = defaultdict(Counter)
+    wordCounts = Counter()
     for word, contextWords in iterPairs:
+        wordCounts[word] += 1
         for context in contextWords:
-            counts[word][context] += 1
-    return counts
+            cooccurrence[word][context] += 1
+    return filter_cooccurrence(cooccurrence, wordCounts)
+
+
+def filter_cooccurrence(coo, wordCounts):
+    filteredCoo = defaultdict(dict)
+    for word, contextWords in coo.items():
+        if wordCounts[word] > LEMMA_THRESHOLD:
+            for context, val in contextWords.items():
+                if wordCounts[context] > LEMMA_THRESHOLD and val > COOCCURRENCE_THRESHOLD:
+                    filteredCoo[word][context] = val
+    return filteredCoo
+
+
+def create_store_space_params(vectorsFile, vocabularyFile, contextIterator):
+    input_parsed = InputParser()
+    cooccurrence = get_cooccurrence_from_iter(contextIterator(input_parsed))
+    store_cooccurrence(vectorsFile, cooccurrence)
+    store_list(vocabularyFile, cooccurrence.keys())
 
 
 class SentenceContext:
@@ -30,34 +54,24 @@ class SentenceContext:
             self.cur = self.iter.__next__()
             self.index = 0
         self.index += 1
-        return self.cur[self.index - 1], self.cur
+        return self.cur[self.index - 1], self.cur[:self.index]+self.cur[self.index+1:]
 
 
 class SkipGram:
-    FunctionWordsFilePath = "functionWords.data"
 
     def __init__(self, input_parsed):
-        funcWordsLines = (w.split('#', 1)[0].strip()
-                          for w in open(self.FunctionWordsFilePath).readlines())
-        self.excludeWords = [w for w in funcWordsLines if w]
-
         self.excludeTags = ["DT", "IN", "PRP$", "WP$", "$", "CC", "PRP"]
-
-        self.iter = iter(input_parsed.iter_cols((2, 3))).__iter__()
+        self.iter = iter(input_parsed.iter_cols((2, 3), self.filterFunctionWords)).__iter__()
         self.cur = []
+        self.filterFunctionWords = lambda x: x[3] in self.excludeTags
         self.index = 0
 
     def __iter__(self):
         return self
 
-    def _filter_function_words(self, sentence):
-        return [pair[0] for pair in sentence
-                if pair[0] not in self.excludeWords
-                and pair[1] not in self.excludeTags]
-
     def __next__(self):
         if self.index == len(self.cur):
-            self.cur = self._filter_function_words(self.iter.__next__())
+            self.cur = self.iter.__next__()
             self.index = 0
 
         self.index += 1
@@ -68,18 +82,9 @@ class SkipGram:
 # ====================================================
 @measure
 def main():
-    input_parsed = InputParser()
+    create_store_space_params(SENTENCE_OUT, SENTENCE_VOC, SentenceContext)
+    create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_VOC, SkipGram)
 
-    # filterClass = SimpleFilter(Counter(input_parsed.iter_all(2)))
-
-    cooccurrence = get_cooccurrence_from_iter(SentenceContext(input_parsed))
-    store_cooccurrence(SENTENCE_OUT, cooccurrence)  # , filterClass.filter)
-
-    cooccurrence = get_cooccurrence_from_iter(SkipGram(input_parsed))
-    store_cooccurrence(SKIPGRAM_OUT, cooccurrence)  # , filterClass.filter)
-
-    unique_words = sorted(input_parsed.create_bank_set(2))
-    store_list(unique_words, "words.out")
 
 if __name__ == '__main__':
     main()

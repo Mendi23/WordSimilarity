@@ -1,12 +1,8 @@
-import operator
-from collections import Counter
-
 from helpers.measuretime import measure
-from parsers import InputParser, store_dict, load_dict, store_list, load_list
+from parsers import store_list, load_list
 
 WORDS_INDEX_PATH = "words2index.data.out"
 WORDS_COUNT_PATH = "words_count.data.out"
-THRESHOLD = 100
 
 def _create_words2index(keys):
     words_dict = dict(zip(keys, range(len(keys))))
@@ -25,28 +21,17 @@ def get_transform_sentences(wordsDict, input_parsed):
         yield transform_line(line, wordsDict)
 
 @measure
-def load_words2index():
-    words = load_list(WORDS_INDEX_PATH)
+def load_words2index(filePath):
+    words = load_list(filePath)
     return _create_words2index(words)
-    # return load_dict(WORDS_INDEX_PATH, int)
 
-@measure
-def load_words_count():
-    return Counter(load_dict(WORDS_COUNT_PATH, int))
+def store_words2index(filePath, hashingDict):
+    store_list(filePath, hashingDict.keys())
 
 @measure
 def main():
-    input_parsed = InputParser()
-    words_count = Counter({key:val
-                           for key, val in Counter(input_parsed.iter_all(2)).items()
-                           if val > THRESHOLD})
-
-    store_dict(words_count, WORDS_COUNT_PATH)
-    store_list(words_count.keys(), WORDS_INDEX_PATH)
+    pass
 
 if __name__ == '__main__':
     main()
 
-    # _word2index, _index2word = create_dicts()
-
-    # data = list(get_transform_sentences(_word2index))
