@@ -4,6 +4,7 @@ from ContextProcessors.BaseContext import BaseContext
 
 CONNECTORS_OUT = "connectors.data.out"
 
+
 class Connectors(BaseContext):
     FunctionWordsFilePath = "functionWords.data"
 

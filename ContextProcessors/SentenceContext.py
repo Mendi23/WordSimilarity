@@ -6,6 +6,7 @@ from ContextProcessors.BaseContext import BaseContext
 
 SENTENCE_OUT = "sentence.data.out"
 
+
 class SentenceContext(BaseContext):
     def __init__(self, ):
         super().__init__(SENTENCE_OUT)
@@ -22,5 +23,3 @@ class SentenceContext(BaseContext):
             return word, self._sentence_words(sentence_except_me)
 
         return None
-
-

@@ -6,6 +6,7 @@ from ContextProcessors.BaseContext import BaseContext
 
 SKIPGRAM_OUT = "skipgram.data.out"
 
+
 class SkipGram(BaseContext):
     FunctionWordsFilePath = "functionWords.data"
     WINDOW_SIZE = 2
@@ -23,7 +24,7 @@ class SkipGram(BaseContext):
     def _isfunction(self, w):
         return w[2] in self.excludeWords \
                or w[3] in self.excludeTags \
-                or not self.regex.search(w[2])
+               or not self.regex.search(w[2])
 
     def _getwindow(self, i, cur):
         left = []
