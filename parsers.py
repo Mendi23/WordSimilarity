@@ -1,8 +1,8 @@
 import itertools
 import numpy as np
 
-# INPUT_FILE = "wikipedia.sample.trees.lemmatized"
-INPUT_FILE = "wikipedia.tinysample.trees.lemmatized.txt"
+INPUT_FILE = "wikipedia.sample.trees.lemmatized"
+#INPUT_FILE = "wikipedia.tinysample.trees.lemmatized.txt"
 
 DELIM = '\t'
 
@@ -22,8 +22,9 @@ class InputParser:
         with open(self.inputFile, encoding="utf8") as f:
             for line in f:
                 if line.strip():
-                    if lineFilter(line):
-                        retVal.append(np.array(line.split())[index])
+                    cur = line.split()
+                    if lineFilter(cur):
+                        retVal.append(np.array(cur)[index])
                 else:
                     yield retVal
                     retVal = []

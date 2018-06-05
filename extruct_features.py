@@ -80,7 +80,8 @@ class SkipGram:
 
         self.index += 1
         lval = max(0, self.index - 3)
-        return self.cur[self.index - 1], self.cur[lval:self.index + 2]
+        return self.cur[self.index - 1], \
+               self.cur[lval:self.index - 1] + self.cur[self.index:self.index + 2]
 
 
 class Connectors:
@@ -157,9 +158,9 @@ class Connectors:
 # ====================================================
 @measure
 def main():
-    create_store_space_params(SENTENCE_OUT, SENTENCE_VOC, SentenceContext)
+    # create_store_space_params(SENTENCE_OUT, SENTENCE_VOC, SentenceContext)
     create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_VOC, SkipGram)
-    #create_store_space_params(CONNECTORS_OUT, CONNECTORS_VOC, Connectors)
+    # create_store_space_params(CONNECTORS_OUT, CONNECTORS_VOC, Connectors)
 
 
 if __name__ == '__main__':
