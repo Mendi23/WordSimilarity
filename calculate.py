@@ -22,9 +22,9 @@ SENTENCE_SPACE = "sentence.space"
 SKIPGRAM_SPACE = "skipgram.space"
 CONNECTORS_SPACE = "connect.space"
 
-vector_files = [ef.SENTENCE_OUT, ef.SKIPGRAM_OUT, ef.CONNECTORS_OUT]
-words_files = [ef.SENTENCE_VOC, ef.SKIPGRAM_VOC, ef.CONNECTORS_VOC]
-space_files = [SENTENCE_SPACE, SKIPGRAM_SPACE, CONNECTORS_SPACE]
+vector_files = [ef.SENTENCE_OUT, ef.SKIPGRAM_OUT]#, ef.CONNECTORS_OUT]
+words_files = [ef.SENTENCE_VOC, ef.SKIPGRAM_VOC]#, ef.CONNECTORS_VOC]
+space_files = [SENTENCE_SPACE, SKIPGRAM_SPACE]#, CONNECTORS_SPACE]
 aux_files = zip(vector_files, words_files, space_files)
 
 example_words = [b"car", b"bus", b"hospital", b"hotel", b"gun", b"bomb", b"horse", b"fox",
@@ -43,15 +43,18 @@ def calculate_and_save(data_file_path, words_path, outfile_path):
 
 def print_examples(filePath):
     wordVecs = [load(sf) for sf in space_files]
-    with open(filePath, "w", encoding="etf8") as f:
+    with open(filePath, "w", encoding="utf8") as f:
         for example in example_words:
+            f.write("-"*80 + "\n")
+            f.write(f"{example.decode('utf8'):>35}\n")
+            f.write("-"*80 + "\n")
             for x in _get_neighbours_iter(example, wordVecs):
-                f.write(" | ".join(x))
+                f.write(" | ".join(f"{y[0].decode('utf8'):<14}" for y in x))
                 f.write("\n")
 
 
 def _get_neighbours_iter(word, wordSpaces):
-    return zip(sp.get_neighbours(word, NUM_NEIGHBOURS, CosSimilarity()) for sp in wordSpaces)
+    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, CosSimilarity()) for sp in wordSpaces))
 
 
 if __name__ == '__main__':
