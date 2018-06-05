@@ -11,9 +11,9 @@ class InputParser:
     def __init__(self, inputFile=INPUT_FILE):
         self.inputFile = inputFile
 
-    def iter_cols(self, cols, lineFilter = None):
-        if not lineFilter:
-            lineFilter = lambda x: True
+    def iter_cols(self, cols, includePredicate = None):
+        if not includePredicate:
+            includePredicate = lambda x: True
         if not cols:
             cols = tuple(range(8))
 
@@ -23,7 +23,7 @@ class InputParser:
             for line in f:
                 if line.strip():
                     cur = line.split()
-                    if lineFilter(cur):
+                    if includePredicate(cur):
                         retVal.append(np.array(cur)[index])
                 else:
                     yield retVal

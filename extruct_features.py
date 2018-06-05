@@ -37,6 +37,7 @@ def filter_cooccurrence(coo, wordCounts):
     return filteredCoo
 
 
+@measure
 def create_store_space_params(vectorsFile, vocabularyFile, contextIterator):
     input_parsed = InputParser()
     cooccurrence = get_cooccurrence_from_iter(contextIterator(input_parsed))
@@ -65,8 +66,8 @@ class SkipGram:
 
     def __init__(self, input_parsed):
         self.excludeTags = ["DT", "IN", "PRP$", "WP$", "$", "CC", "PRP"]
-        self.filterFunctionWords = lambda x: x[3] not in self.excludeTags
-        self.iter = iter(input_parsed.iter_cols(2, self.filterFunctionWords)).__iter__()
+        include_predicate = lambda w: w[3] not in self.excludeTags
+        self.iter = iter(input_parsed.iter_cols(2, include_predicate)).__iter__()
         self.cur = []
         self.index = 0
 
@@ -156,7 +157,7 @@ class Connectors:
 
 
 # ====================================================
-@measure
+
 def main():
     # create_store_space_params(SENTENCE_OUT, SENTENCE_VOC, SentenceContext)
     create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_VOC, SkipGram)

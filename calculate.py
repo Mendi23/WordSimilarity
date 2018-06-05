@@ -30,6 +30,8 @@ aux_files = zip(vector_files, words_files, space_files)
 example_words = [b"car", b"bus", b"hospital", b"hotel", b"gun", b"bomb", b"horse", b"fox",
                  b"table", b"bowl", b"guitar", b"piano"]
 
+def load(outfile_path) -> Space:
+    return io_utils.load(outfile_path)
 
 @measure
 def calculate_and_save(data_file_path, words_path, outfile_path):
@@ -40,7 +42,7 @@ def calculate_and_save(data_file_path, words_path, outfile_path):
     return words_space
 
 def print_examples(filePath):
-    wordVecs = [io_utils.load(sf) for sf in space_files]
+    wordVecs = [load(sf) for sf in space_files]
     with open(filePath, "w", encoding="etf8") as f:
         for example in example_words:
             for x in _get_neighbours_iter(example, wordVecs):
@@ -65,10 +67,10 @@ if __name__ == '__main__':
 
 # @measure
 # def tests(outfile_path):
-#     words_space = io_utils.load(outfile_path)
-#     print(words_space.cooccurrence_matrix[:2])
+#     words_space = load(outfile_path)
+#     # print(words_space.cooccurrence_matrix[:2])
 #     words_space.apply(PpmiWeighting())
-#     print(words_space.cooccurrence_matrix[:2])
+#     # print(words_space.cooccurrence_matrix[:2])
 #
 #     print(words_space.get_sim(b"bus", b"car", CosSimilarity()))
 #     print(words_space.get_sim(b"dog", b"cat", CosSimilarity()))
