@@ -1,12 +1,16 @@
 from collections import defaultdict, Counter
-import numpy as np
+from pprint import pprint
+
 from helpers.measuretime import measure
 from parsers import InputParser, store_list, store_cooccurrence
+import numpy as np
 
 SENTENCE_OUT = "sentence.out"
 SENTENCE_VOC = "sentence.voc"
 SKIPGRAM_OUT = "skipgram.out"
 SKIPGRAM_VOC = "skipgram.voc"
+CONNECTORS_OUT = "connect.out"
+CONNECTORS_VOC = "connect.voc"
 
 LEMMA_THRESHOLD = 100
 # FEATURE_THRESHOLD = 50
@@ -54,17 +58,89 @@ class SentenceContext:
             self.cur = self.iter.__next__()
             self.index = 0
         self.index += 1
-        return self.cur[self.index - 1], self.cur[:self.index]+self.cur[self.index+1:]
+        return self.cur[self.index - 1], self.cur[:self.index] + self.cur[self.index + 1:]
 
 
 class SkipGram:
 
     def __init__(self, input_parsed):
         self.excludeTags = ["DT", "IN", "PRP$", "WP$", "$", "CC", "PRP"]
-        self.iter = iter(input_parsed.iter_cols((2, 3), self.filterFunctionWords)).__iter__()
+        self.filterFunctionWords = lambda x: x[3] not in self.excludeTags
+        self.iter = iter(input_parsed.iter_cols(2, self.filterFunctionWords)).__iter__()
         self.cur = []
-        self.filterFunctionWords = lambda x: x[3] in self.excludeTags
         self.index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        while self.index == len(self.cur):
+            self.cur = self.iter.__next__()
+            self.index = 0
+
+        self.index += 1
+        lval = max(0, self.index - 3)
+        return self.cur[self.index - 1], self.cur[lval:self.index + 2]
+
+
+class Connectors:
+
+    def __init__(self, input_parsed):
+        self.iter = iter(input_parsed.iter_cols(None)).__iter__()
+        self.cur = []
+        self.index = 0
+        self.prepTags = ["prep"]
+        self.NounTags = ["NN", "NNP", "NNPS", "NNS"]
+
+    def _handle_preposition(self, feature, is_child):
+        if is_child:
+            nouns = list(filter(lambda x: x[3] in self.NounTags, self._get_children(feature)))
+            if len(nouns) > 1:
+                print(f"~~~ ERRORRR: Mendi was right - what do we do? cur:")
+                pprint(self.cur)
+            elif len(nouns) > 0:
+                noun = nouns[0]
+                return noun[2]
+        else:
+            pp_parent = self._get_parent(feature)
+            if pp_parent is not None:
+                return pp_parent[2]
+        return None
+
+    def _extract_feature_details(self, word, feature, feature_is_child):
+        label = feature[7] if feature_is_child else word[7]
+        direction = "c" if feature_is_child else "p"
+        feature_name = feature[2]
+        if feature[3] in self.prepTags:
+            prep_data = self._handle_preposition(feature, feature_is_child)
+
+        return "|".join([label, feature_name, direction])
+
+    def _get_connected(self):
+        current_word = self.cur[self.index - 1]
+        parent = self._get_parent(current_word)
+        children = self._get_children(current_word)
+
+        res = []
+
+        if parent is not None:
+            res.append(self._extract_feature_details(current_word, parent, False))
+
+        for c in children:
+            res.append(self._extract_feature_details(current_word, c, True))
+
+        return res
+
+    def _get_parent(self, word):
+        index = int(word[6])
+        for p in reversed(self.cur[:index]):
+            if int(p[0]) == index:
+                return p
+        return None
+
+    def _get_children(self, word):
+        index = word[0]
+        return [w for w in self.cur if w[6] == index]
 
     def __iter__(self):
         return self
@@ -75,8 +151,7 @@ class SkipGram:
             self.index = 0
 
         self.index += 1
-        lval = max(0, self.index - 3)
-        return self.cur[self.index - 1], self.cur[lval:self.index + 2]
+        return self.cur[self.index - 1][2], self._get_connected()
 
 
 # ====================================================
@@ -84,6 +159,7 @@ class SkipGram:
 def main():
     create_store_space_params(SENTENCE_OUT, SENTENCE_VOC, SentenceContext)
     create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_VOC, SkipGram)
+    #create_store_space_params(CONNECTORS_OUT, CONNECTORS_VOC, Connectors)
 
 
 if __name__ == '__main__':
