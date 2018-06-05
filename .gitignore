@@ -4,7 +4,8 @@ wikipedia.sample.*
 
 
 *.out
-
+*.voc
+*.space
 *.pkl
 
 .idea

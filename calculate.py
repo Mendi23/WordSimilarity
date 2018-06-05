@@ -13,21 +13,20 @@ from composes.utils import io_utils
 from composes.transformation.scaling.ppmi_weighting import PpmiWeighting
 
 from hashing import WORDS_INDEX_PATH
+import extruct_features as ef
+from helpers.measuretime import measure
 
-SPACE_PATH = "words_space.pkl"
+@measure
+def calculate_and_save(data_file_path, words_path, outfile_path):
+    words_space = Space.build(data=data_file_path,
+                              rows=words_path, cols=words_path, format="sm")
 
-def load() -> Space:
-    return io_utils.load(SPACE_PATH)
-
-def calculate_and_save():
-    words_space = Space.build(data="skipgram_uniq.data.out",
-        rows=WORDS_INDEX_PATH, cols=WORDS_INDEX_PATH, format="sm")
-
-    io_utils.save(words_space, SPACE_PATH)
+    io_utils.save(words_space, outfile_path)
     return words_space
 
-def tests():
-    words_space = load()
+@measure
+def tests(outfile_path):
+    words_space = io_utils.load(outfile_path)
     print(words_space.cooccurrence_matrix[:2])
     words_space.apply(PpmiWeighting())
     print(words_space.cooccurrence_matrix[:2])
@@ -41,5 +40,5 @@ def tests():
 
 
 if __name__ == '__main__':
-    # calculate_and_save()
-    tests()
+    #calculate_and_save(ef.SENTENCE_OUT, ef.SENTENCE_VOC, "sentence.space")
+    tests("words_space.pkl")

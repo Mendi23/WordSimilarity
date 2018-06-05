@@ -58,7 +58,7 @@ class SentenceContext:
             self.cur = self.iter.__next__()
             self.index = 0
         self.index += 1
-        return self.cur[self.index - 1], self.cur[:self.index] + self.cur[self.index + 1:]
+        return self.cur[self.index - 1], self.cur[:self.index - 1] + self.cur[self.index:]
 
 
 class SkipGram:
