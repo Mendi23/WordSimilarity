@@ -24,6 +24,7 @@ def calculate_and_save():
         rows=WORDS_INDEX_PATH, cols=WORDS_INDEX_PATH, format="sm")
 
     io_utils.save(words_space, SPACE_PATH)
+    return words_space
 
 def tests():
     words_space = load()
@@ -31,9 +32,11 @@ def tests():
     words_space.apply(PpmiWeighting())
     print(words_space.cooccurrence_matrix[:2])
 
-    print(words_space.get_sim("bus", "car", CosSimilarity()))
-    print(words_space.get_sim("dog", "cat", CosSimilarity()))
-    print(words_space.get_neighbours("car", 20, CosSimilarity()))
+    print(words_space.get_sim(b"bus", b"car", CosSimilarity()))
+    print(words_space.get_sim(b"dog", b"cat", CosSimilarity()))
+    print(words_space.get_neighbours(b"car", 20, CosSimilarity()))
+    print(words_space.get_neighbours(b"cat", 20, CosSimilarity()))
+    print(words_space.get_neighbours(b"dog", 20, CosSimilarity()))
 
 
 
