@@ -2,6 +2,7 @@ from collections import defaultdict, Counter
 from functools import lru_cache
 from itertools import product, chain, filterfalse, islice
 
+from hashing import MagicHash
 from helpers.measuretime import measure
 from parsers import InputParser, store_list, store_cooccurrence
 
@@ -20,24 +21,24 @@ FEATURE_THRESHOLD = 100
 COOCCURRENCE_THRESHOLD = 5
 
 
-@lru_cache()
+@lru_cache(maxsize=1)
 def getWrodCount():
     return Counter(InputParser().iter_all(2))
 
-
 def get_cooccurrence_from_iter(iterPairs):
     wordCounts = getWrodCount()
+    mhash = MagicHash()
     tempCooDict = defaultdict(Counter)
     for word, context in iterPairs:
         if wordCounts[word] > LEMMA_THRESHOLD and \
                 wordCounts[context.rsplit("|", 1)[-1]] > FEATURE_THRESHOLD:
-            tempCooDict[word][context] += 1
+            tempCooDict[mhash[word]][mhash[context]] += 1
 
     cooccurrences = defaultdict(dict)
     for word, contextWords in tempCooDict.items():
         for context, val in contextWords.items():
             if val > COOCCURRENCE_THRESHOLD:
-                cooccurrences[word][context] = val
+                cooccurrences[mhash[word]][mhash[context]] = val
     return cooccurrences, cooccurrences.keys(), \
            frozenset(chain.from_iterable(keyVal.keys() for keyVal in cooccurrences.values()))
 

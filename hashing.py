@@ -13,10 +13,11 @@ class MagicHash(UserDict):
         self.id = -1
 
     @classmethod
-    def create_from_keys(cls, keys):
+    def create_from_keys(cls, keys, freezed=True):
         ret = cls()
         ret.id = len(keys)
-        ret.data = defaultdict(ret._nextId, zip(keys, range(ret.id)))
+        generator = zip(keys, range(ret.id))
+        ret.data = dict(generator) if freezed else defaultdict(ret._nextId, generator)
         ret.id2word = dict(zip(ret.data.values(), ret.data.keys()))
         return ret
 

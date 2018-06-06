@@ -2,7 +2,9 @@
 __pycache__
 wikipedia.sample.*
 
-
+*.rows
+*.cols
+*.res
 *.out
 *.voc
 *.space
