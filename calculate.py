@@ -42,6 +42,7 @@ def calculate_and_save(dataPath, rowsPath, colsPath, outfilePath):
     io_utils.save(words_space, outfilePath)
     return words_space
 
+@measure
 def print_examples(filePath):
     wordVecs = [load(sf) for sf in space_files]
     with open(filePath, "w", encoding="utf8") as f:
@@ -72,10 +73,10 @@ if __name__ == '__main__':
     for out, rows, cols, space in aux_files:
         calculate_and_save(out, rows, cols, space)
 
-    for space in space_files:
-        tests(space)
+    # for space in space_files:
+    #     tests(space)
 
-    #print_examples("sim_results.res")
+    print_examples("sim_results.res")
 
 
 

@@ -14,30 +14,9 @@ CONNECTORS_OUT = "connect.out"
 CONNECTORS_ROWS = "connect.rows"
 CONNECTORS_COLS = "connect.cols"
 
-
 LEMMA_THRESHOLD = 100
 FEATURE_THRESHOLD = 100
 COOCCURRENCE_THRESHOLD = 5
-
-
-# def get_cooccurrence_from_iter(iterPairs):
-#     cooccurrence = defaultdict(Counter)
-#     for word, contextWords in iterPairs:
-#         for context in contextWords:
-#             cooccurrence[word][context] += 1
-#     return filter_cooccurrence(cooccurrence)
-#
-#
-# def filter_cooccurrence(coo):
-#     input_parsed = InputParser()
-#     wordCounts = Counter(input_parsed.iter_all(2))
-#     filteredCoo = defaultdict(dict)
-#     for word, contextWords in coo.items():
-#         if wordCounts[word] > LEMMA_THRESHOLD:
-#             for context, val in contextWords.items():
-#                 if wordCounts[context] > LEMMA_THRESHOLD and val > COOCCURRENCE_THRESHOLD:
-#                     filteredCoo[word][context] = val
-#     return filteredCoo
 
 
 def get_cooccurrence_from_iter(iterPairs):
@@ -136,83 +115,34 @@ class Connectors:
 
     def _get_contexts(self, sentence):
         self.cur = []
-        wordId = {wordFeatures[0]: wordFeatures[2] for wordFeatures in sentence}
+        wordId = {wordFeatures[0]: wordFeatures for wordFeatures in sentence}
         wordId["0"] = None
 
         for wordFeatures in sentence:
-            if wordFeatures[3] not in self.prepTags:
+            tag = wordFeatures[3]
+            if tag not in self.prepTags:
                 word = wordFeatures[2]
                 dependency = wordFeatures[7]
                 parent = wordId[wordFeatures[6]]
                 if parent is not None:
-                    self.cur.append((word, "|".join([dependency, "c", parent])))
-                    self.cur.append((parent, "|".join([dependency, "p", word])))
+                    if parent[3] in self.prepTags:
+                        dependency = "_".join([parent[7], parent[2]])
+                        parent = wordId[parent[6]]
+                        if parent is not None:
+                            self.cur.append((word, "|".join([dependency, "c", parent[2]])))
+                            if tag in self.NounTags:
+                                self.cur.append((parent[2], "|".join([dependency, "p", word])))
 
-    # def _handle_preposition(self, feature, is_child):
-    #     if is_child:
-    #         nouns = list(filter(lambda x: x[3] in self.NounTags, self._get_children(feature)))
-    #         if len(nouns) > 1:
-    #             print(f"~~~ ERRORRR: Mendi was right - what do we do? cur:")
-    #             pprint(self.cur)
-    #         elif len(nouns) > 0:
-    #             noun = nouns[0]
-    #             return noun[2]
-    #     else:
-    #         pp_parent = self._get_parent(feature)
-    #         if pp_parent is not None:
-    #             return pp_parent[2]
-    #     return None
-    #
-    # def _extract_feature_details(self, word, feature, feature_is_child):
-    #     label = feature[7] if feature_is_child else word[7]
-    #     direction = "c" if feature_is_child else "p"
-    #     feature_name = feature[2]
-    #     if feature[3] in self.prepTags:
-    #         prep_data = self._handle_preposition(feature, feature_is_child)
-    #
-    #     return "|".join([label, feature_name, direction])
-    #
-    # def _get_connected(self):
-    #     current_word = self.cur[self.index - 1]
-    #     parent = self._get_parent(current_word)
-    #     children = self._get_children(current_word)
-    #
-    #     res = []
-    #
-    #     if parent is not None:
-    #         res.append(self._extract_feature_details(current_word, parent, False))
-    #
-    #     for c in children:
-    #         res.append(self._extract_feature_details(current_word, c, True))
-    #
-    #     return res
-    #
-    # def _get_parent(self, word):
-    #     index = int(word[6])
-    #     for p in reversed(self.cur[:index]):
-    #         if int(p[0]) == index:
-    #             return p
-    #     return None
-    #
-    # def _get_children(self, word):
-    #     index = word[0]
-    #     return [w for w in self.cur if w[6] == index]
+                    else:
+                        self.cur.append((word, "|".join([dependency, "c", parent[2]])))
+                        self.cur.append((parent[2], "|".join([dependency, "p", word])))
 
-    # def __next__(self):
-    #     if self.index == len(self.cur):
-    #         self.cur = self.iter.__next__()
-    #         self.index = 0
-    #
-    #     self.index += 1
-    #     return self.cur[self.index - 1][2], self._get_connected()
-
-
-# ====================================================
+# ==================================================================================================
 
 def main():
-    #create_store_space_params(SENTENCE_OUT, SENTENCE_ROWS, SENTENCE_COLS, SentenceContext)
     create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_ROWS, SKIPGRAM_COLS, SkipGram)
     create_store_space_params(CONNECTORS_OUT, CONNECTORS_ROWS, CONNECTORS_COLS, Connectors)
+    create_store_space_params(SENTENCE_OUT, SENTENCE_ROWS, SENTENCE_COLS, SentenceContext)
 
 
 if __name__ == '__main__':
