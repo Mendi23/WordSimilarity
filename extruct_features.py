@@ -1,18 +1,22 @@
 from collections import defaultdict, Counter
-from itertools import product
+from itertools import product, chain
 
 from helpers.measuretime import measure
 from parsers import InputParser, store_list, store_cooccurrence
 
 SENTENCE_OUT = "sentence.out"
-SENTENCE_VOC = "sentence.voc"
+SENTENCE_ROWS = "sentence.rows"
+SENTENCE_COLS = "sentence.cols"
 SKIPGRAM_OUT = "skipgram.out"
-SKIPGRAM_VOC = "skipgram.voc"
+SKIPGRAM_ROWS = "skipgram.rows"
+SKIPGRAM_COLS = "skipgram.cols"
 CONNECTORS_OUT = "connect.out"
-CONNECTORS_VOC = "connect.voc"
+CONNECTORS_ROWS = "connect.rows"
+CONNECTORS_COLS = "connect.cols"
+
 
 LEMMA_THRESHOLD = 100
-# FEATURE_THRESHOLD = 50
+FEATURE_THRESHOLD = 100
 COOCCURRENCE_THRESHOLD = 5
 
 
@@ -42,7 +46,7 @@ def get_cooccurrence_from_iter(iterPairs):
     tempCooDict = defaultdict(Counter)
     for word, context in iterPairs:
         if wordCounts[word] > LEMMA_THRESHOLD and \
-                wordCounts[context.rsplit("|", 1)[-1]] > LEMMA_THRESHOLD:
+                wordCounts[context.rsplit("|", 1)[-1]] > FEATURE_THRESHOLD:
             tempCooDict[word][context] += 1
 
     cooccurrences = defaultdict(dict)
@@ -50,15 +54,17 @@ def get_cooccurrence_from_iter(iterPairs):
         for context, val in contextWords.items():
             if val > COOCCURRENCE_THRESHOLD:
                 cooccurrences[word][context] = val
-    return cooccurrences
+    return cooccurrences, cooccurrences.keys(), \
+           frozenset(chain.from_iterable(keyVal.keys() for keyVal in cooccurrences.values()))
 
 
 @measure
-def create_store_space_params(vectorsFile, vocabularyFile, contextIterator):
+def create_store_space_params(vectorsFile, rowsFile, colsFile, contextIterator):
     input_parsed = InputParser()
-    cooccurrence = get_cooccurrence_from_iter(contextIterator(input_parsed))
+    cooccurrence, rows, cols = get_cooccurrence_from_iter(contextIterator(input_parsed))
     store_cooccurrence(vectorsFile, cooccurrence)
-    store_list(vocabularyFile, cooccurrence.keys())
+    store_list(rowsFile, rows)
+    store_list(colsFile, cols)
 
 
 class SentenceContext:
@@ -70,7 +76,7 @@ class SentenceContext:
     def _get_contexts(self, sentence):
         self.cur = []
         for i in range(len(sentence)):
-            self.cur.extend(product(sentence[i], sentence[:i] + sentence[i + 1:]))
+            self.cur.extend(product([sentence[i]], sentence[:i] + sentence[i + 1:]))
 
     def __iter__(self):
         return self
@@ -95,8 +101,8 @@ class SkipGram:
     def _get_contexts(self, sentence):
         self.cur = []
         for i in range(len(sentence)):
-            lval = max(0, i - 2)
-            self.cur.extend(product(sentence[i], sentence[lval:i] + sentence[i:i + 2]))
+            lval = max(i - 2, 0)
+            self.cur.extend(product([sentence[i]], sentence[lval:i] + sentence[i + 1:i + 3]))
 
     def __iter__(self):
         return self
@@ -134,12 +140,13 @@ class Connectors:
         wordId["0"] = None
 
         for wordFeatures in sentence:
-            word = wordFeatures[2]
-            dependency = wordFeatures[7]
-            parent = wordId[wordFeatures[6]]
-            if parent is not None:
-                self.cur.append((word, "|".join([dependency, "c", parent])))
-                self.cur.append((parent, "|".join([dependency, "p", word])))
+            if wordFeatures[3] not in self.prepTags:
+                word = wordFeatures[2]
+                dependency = wordFeatures[7]
+                parent = wordId[wordFeatures[6]]
+                if parent is not None:
+                    self.cur.append((word, "|".join([dependency, "c", parent])))
+                    self.cur.append((parent, "|".join([dependency, "p", word])))
 
     # def _handle_preposition(self, feature, is_child):
     #     if is_child:
@@ -203,9 +210,9 @@ class Connectors:
 # ====================================================
 
 def main():
-    create_store_space_params(SENTENCE_OUT, SENTENCE_VOC, SentenceContext)
-    create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_VOC, SkipGram)
-    create_store_space_params(CONNECTORS_OUT, CONNECTORS_VOC, Connectors)
+    #create_store_space_params(SENTENCE_OUT, SENTENCE_ROWS, SENTENCE_COLS, SentenceContext)
+    create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_ROWS, SKIPGRAM_COLS, SkipGram)
+    create_store_space_params(CONNECTORS_OUT, CONNECTORS_ROWS, CONNECTORS_COLS, Connectors)
 
 
 if __name__ == '__main__':

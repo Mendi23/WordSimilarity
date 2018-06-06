@@ -1,8 +1,8 @@
 import itertools
 import numpy as np
 
-#INPUT_FILE = "wikipedia.sample.trees.lemmatized"
-INPUT_FILE = "wikipedia.tinysample.trees.lemmatized.txt"
+INPUT_FILE = "wikipedia.sample.trees.lemmatized"
+#INPUT_FILE = "wikipedia.tinysample.trees.lemmatized.txt"
 
 DELIM = '\t'
 
