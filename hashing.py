@@ -1,16 +1,39 @@
+from collections import defaultdict, UserDict
+
 from helpers.measuretime import measure
 from parsers import store_list, load_list
 
 WORDS_INDEX_PATH = "words2index.data.out"
 WORDS_COUNT_PATH = "words_count.data.out"
 
-def _create_words2index(keys):
-    words_dict = dict(zip(keys, range(len(keys))))
-    return words_dict
+class MagicHash(UserDict):
+    def __init__(self):
+        self.data = defaultdict(self._nextId)
+        self.id2word = {}
+        self.id = -1
 
-def create_r_dict(words_dict):
-    reverse_words_dict = dict(zip(words_dict.values(), words_dict.keys()))
-    return reverse_words_dict
+    @classmethod
+    def create_from_keys(cls, keys):
+        ret = cls()
+        ret.id = len(keys)
+        ret.data = defaultdict(ret._nextId, zip(keys, range(ret.id)))
+        ret.id2word = dict(zip(ret.data.values(), ret.data.keys()))
+        return ret
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return self.id2word[item]
+        else:
+            i = self.data[item]
+            self.id2word[i] = item
+            return i
+
+    def _nextId(self):
+        self.id += 1
+        return self.id
+
+    def freeze(self):
+        self.data.default_factory = None
 
 def transform_line(line, wordDict):
     return [wordDict[word] for word in line]
@@ -23,7 +46,7 @@ def get_transform_sentences(wordsDict, input_parsed):
 @measure
 def load_words2index(filePath):
     words = load_list(filePath)
-    return _create_words2index(words)
+    return MagicHash.create_from_keys(words)
 
 def store_words2index(filePath, hashingDict):
     store_list(filePath, hashingDict.keys())

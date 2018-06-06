@@ -1,5 +1,6 @@
 from collections import defaultdict, Counter
-from itertools import product, chain
+from functools import lru_cache
+from itertools import product, chain, filterfalse, islice
 
 from helpers.measuretime import measure
 from parsers import InputParser, store_list, store_cooccurrence
@@ -19,9 +20,13 @@ FEATURE_THRESHOLD = 100
 COOCCURRENCE_THRESHOLD = 5
 
 
+@lru_cache()
+def getWrodCount():
+    return Counter(InputParser().iter_all(2))
+
+
 def get_cooccurrence_from_iter(iterPairs):
-    input_parsed = InputParser()
-    wordCounts = Counter(input_parsed.iter_all(2))
+    wordCounts = getWrodCount()
     tempCooDict = defaultdict(Counter)
     for word, context in iterPairs:
         if wordCounts[word] > LEMMA_THRESHOLD and \
@@ -69,19 +74,27 @@ class SentenceContext:
 
 
 class SkipGram:
+    WINDOW = 2
 
     def __init__(self, input_parsed):
         self.excludeTags = ["DT", "IN", "PRP$", "WP$", "$", "CC", "PRP"]
-        include_predicate = lambda w: w[3] not in self.excludeTags
-        self.iter = iter(input_parsed.iter_cols(2, include_predicate)).__iter__()
+        self.iter = iter(input_parsed.iter_cols((2,3))).__iter__()
         self.cur = []
         self.index = 0
+
+    def _is_function(self, w):
+        return w[1] in self.excludeTags
+
+    def _filter(self, sen):
+        return islice(filterfalse(self._is_function, sen), self.WINDOW)
 
     def _get_contexts(self, sentence):
         self.cur = []
         for i in range(len(sentence)):
-            lval = max(i - 2, 0)
-            self.cur.extend(product([sentence[i]], sentence[lval:i] + sentence[i + 1:i + 3]))
+            target = sentence[i][0]
+            left = [w[0] for w in self._filter(sentence[:i:-1])]
+            right = [w[0] for w in self._filter(sentence[i+1:])]
+            self.cur.extend(product([target], left + right))
 
     def __iter__(self):
         return self
@@ -119,23 +132,31 @@ class Connectors:
         wordId["0"] = None
 
         for wordFeatures in sentence:
+            word = wordFeatures[2]
+            dependency = wordFeatures[7]
+            parent = wordId[wordFeatures[6]]
             tag = wordFeatures[3]
-            if tag not in self.prepTags:
-                word = wordFeatures[2]
-                dependency = wordFeatures[7]
-                parent = wordId[wordFeatures[6]]
-                if parent is not None:
-                    if parent[3] in self.prepTags:
-                        dependency = "_".join([parent[7], parent[2]])
-                        parent = wordId[parent[6]]
-                        if parent is not None:
-                            self.cur.append((word, "|".join([dependency, "c", parent[2]])))
-                            if tag in self.NounTags:
-                                self.cur.append((parent[2], "|".join([dependency, "p", word])))
 
-                    else:
-                        self.cur.append((word, "|".join([dependency, "c", parent[2]])))
-                        self.cur.append((parent[2], "|".join([dependency, "p", word])))
+            save = True
+            save_reverse = tag not in self.prepTags
+
+            if parent is None:
+                continue
+
+            if parent[3] in self.prepTags:
+                p_parent = wordId[parent[6]]
+                if p_parent is None:
+                    save = False
+                else:
+                    dependency = "_".join([parent[7], parent[2]])
+                    parent = p_parent
+                    save_reverse = tag in self.NounTags
+
+            if save:
+                self.cur.append((word, "|".join([dependency, "c", parent[2]])))
+            if save_reverse:
+                self.cur.append((parent[2], "|".join([dependency, "p", word])))
+
 
 # ==================================================================================================
 
@@ -143,6 +164,8 @@ def main():
     create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_ROWS, SKIPGRAM_COLS, SkipGram)
     create_store_space_params(CONNECTORS_OUT, CONNECTORS_ROWS, CONNECTORS_COLS, Connectors)
     create_store_space_params(SENTENCE_OUT, SENTENCE_ROWS, SENTENCE_COLS, SentenceContext)
+
+    print(getWrodCount.cache_info())
 
 
 if __name__ == '__main__':
