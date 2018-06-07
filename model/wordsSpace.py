@@ -1,14 +1,12 @@
-import heapq
 import pickle
 from collections import Counter, defaultdict
-from itertools import chain, islice
+from itertools import chain
 from pprint import pprint
 
 import numpy as np
 from scipy.sparse import dok_matrix
 
 from model import hashing
-from model.similarities import Similarity
 
 
 class WordsSpace(object):
@@ -38,12 +36,15 @@ class WordsSpace(object):
             return
 
         rh, ch = self._hashers
-        self._matrix = dok_matrix(shape, dtype=np.int64)
+        self._matrix = dok_matrix(shape, dtype=np.float64)
         for word, contextWords in counter.items():
             for context, val in contextWords.items():
                 i, j = (word, context) if counterHashed else (rh[word], ch[context])
                 self._matrix[i, j] = val
         self._matrix = self._matrix.tocsr()
+
+        rh.freeze()
+        ch.freeze()
         self.log("Finish")
 
     @classmethod
@@ -78,27 +79,17 @@ class WordsSpace(object):
         with open(filepath, "rb") as fin:
             return pickle.load(fin)
 
-    def get_neighbours(self, word, n):
-        hh = self._hashers[0]
-        wordId = hh[word]
-
-        largest = self._similarity.get_neighbours(n, wordId)
-
-        return [hh[i] for i, v in largest]
-
-    def get_sim(self, a, b):
-        hh = self._hashers[0]
-
-        return self._similarity.get_sim(hh[a], hh[b])
-
     def apply_modifier(self, modifier):
         self._matrix = modifier(self._matrix)
-        pprint(self._matrix[:100, :100])
-        print(self._matrix[:100, :100].todense())
 
-    def apply_similarity(self, similarity: Similarity):
-        self._similarity = similarity
-        similarity.precalculate(self._matrix)
+    def row2id(self, w):
+        return self._hashers[0][w]
+
+    def col2id(self, w):
+        return self._hashers[1][w]
+
+    def shape(self):
+        return self._matrix.shape
 
     @staticmethod
     def log(message):

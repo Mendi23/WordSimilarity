@@ -59,34 +59,34 @@ def print_examples(filePath, neighbours_iter, titles):
 
 
 def _get_neighbours_iter(word):
-    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, CosSimilarity()) for sp in wordVecs))
+    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS) for sp in similarities))
 
 
 @measure
 def tests(outfile_path):
     words_space = load(outfile_path)
-    # words_space.apply_modifier(PMI_log())
+    words_space.apply_modifier(PMI())
 
-    words_space.apply_similarity(CosSimilarity())
-    print(words_space.get_sim(b"bus", b"car"))
-    print(words_space.get_sim(b"dog", b"cat"))
-    print(words_space.get_neighbours(b"dog", 20))
-    print(words_space.get_neighbours(b"bus", 20))
+    sim = CosSimilarity(words_space)
+    print(sim.get_sim(b"bus", b"car"))
+    print(sim.get_sim(b"dog", b"cat"))
+    print(sim.get_neighbours(b"dog", 20))
+    print(sim.get_neighbours(b"bus", 20))
 
-    words_space.apply_similarity(FirstOrderSimilarity())
-    print(words_space.get_neighbours(b"dog", 20))
-    print(words_space.get_neighbours(b"bus", 20))
+    sim = FirstOrderSimilarity(words_space)
+    print(sim.get_neighbours(b"dog", 20))
+    print(sim.get_neighbours(b"bus", 20))
 
 
 if __name__ == '__main__':
     # for out, rows, cols, space in aux_files:
     #     calculate_and_save(out, rows, cols, space)
 
+    # for space in space_files:
+    #     tests(space)
 
-    for space in space_files:
-        tests(space)
-
-    # wordVecs = [load(sf) for sf in space_files]
-    # for wv in wordVecs:
-    #     wv.apply_modifier(PMI)
-    # print_examples("sim_results.res", _get_neighbours_iter, titles)
+    wordVecs = [load(sf) for sf in space_files]
+    for wv in wordVecs:
+        wv.apply_modifier(PMI())
+    similarities = [CosSimilarity(ws) for ws in wordVecs]
+    print_examples("sim_results.res", _get_neighbours_iter, titles)

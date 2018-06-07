@@ -1,80 +1,98 @@
-import abc
 import heapq
-from collections import defaultdict
-from functools import lru_cache
 from itertools import product, islice
-
-from scipy.sparse import csr_matrix, dok_matrix
 from scipy.sparse.linalg import norm
 
 from model import modifiers
-from model.hashing import MagicHash
-import typing
+
+from model.wordsSpace import WordsSpace
 
 
 class Similarity:
-    def __init__(self):
-        self._sim = None
+    def __init__(self, wordSpace: WordsSpace):
+        self._ws = wordSpace
+        self._sim = {}
 
-    def get_sim(self, aId, bId):
-        return self._sim[aId, bId]
-
-    def get_neighbours(self, n, id):
-        numOfNeighbours = self._sim.shape[1]
+    def _n_largest(self, wId, n, length, predicate=None):
+        if predicate is None:
+            predicate = lambda x: True
 
         # get all sim values of the current word
-        simValues = ((i, self._sim[id, i]) for i in range(numOfNeighbours))
+        simValues = filter(predicate, ((i, self._sim[wId, i]) for i in range(length)))
 
         # filter only the n-largest
-        largest = heapq.nlargest(n, (pair for pair in simValues if pair[1] != 0), key=lambda v: v[1])
+        largest = heapq.nlargest(n, simValues, key=lambda v: v[1])
         keys = [l[0] for l in largest]
 
         # if there is not enough - add zero similarities from remain column values
         if len(largest) < n:
-            moreVals = islice(((i, 0.0) for i in range(numOfNeighbours) if i not in keys),
+            moreVals = islice(((i, 0.0) for i in range(length) if i not in keys),
                               n - len(largest))
             largest += list(moreVals)
 
         return largest
 
-    def precalculate(self, matrix):
-        raise NotImplementedError()
-
 
 class CosSimilarity(Similarity):
-    def precalculate(self, matrix):
-        nRows = matrix.shape[0]
-        self._sim = defaultdict(int)
+    def __init__(self, wordSpace: WordsSpace):
+        super().__init__(wordSpace)
+        self._sim = {}
+        self._normalized = modifiers.Normalize(wordSpace._matrix)
 
-        normalized_mat = modifiers.Normalize(matrix)
+    def get_sim(self, a, b):
+        aId, bId = self._ws.row2id(a), self._ws.row2id(b)
 
-        for i in range(nRows):
-            aRow = normalized_mat[i, :]
-            for j in range(i, nRows):
-                bRow = normalized_mat[j, :]
+        self._precalculate(aId, bId)
+        return self._sim[aId, bId]
+
+    def get_neighbours(self, word, n):
+        wId = self._ws.row2id(word)
+        self._precalculate(wId)
+        nRows, nCols = self._ws.shape()
+
+        largest = self._n_largest(wId, n, nRows)
+
+        return [self._ws.row2id(i) for i, v in largest]
+
+    def _precalculate(self, aId, bId=None):
+        nRows, nCols = self._ws.shape()
+
+        aRow = self._normalized[aId, :]
+        irange = range(nRows) if bId is None else [bId]
+        for i in irange:
+            if (aId, i) not in self._sim:
+                bRow = self._normalized[i, :]
                 sim = aRow.dot(bRow.getH())[0, 0]
-                if sim > 0:
-                    self._sim[i, j] = sim
-                    self._sim[j, i] = sim
-                else:
-                    print(sim)
-                    input()
+                self._sim[aId, i] = sim
+                self._sim[i, aId] = sim
 
 
 class FirstOrderSimilarity(Similarity):
+    def __init__(self, wordSpace: WordsSpace):
+        super().__init__(wordSpace)
+        self._sim = {}
 
-    def precalculate(self, matrix: csr_matrix):
-        nRows, nCols = matrix.shape
-        self._sim = defaultdict(int)
+    def get_neighbours(self, word, n):
+        wId = self._ws.row2id(word)
+        self._precalculate(wId)
+        nRows, nCols = self._ws.shape()
 
-        for i in range(nRows):
-            aRow = matrix[i, :]
-            aRowSum = aRow.sum()
-            if aRowSum == 0:
-                continue
-            for j in range(nCols):
-                sim = aRow[0, j] / aRowSum
-                self._sim[i, j] = sim
+        largest = self._n_largest(wId, n, nCols, lambda pair: pair[1] != 0)
+
+        return [self._ws.col2id(i) for i, v in largest]
+
+    def _precalculate(self, wId):
+        nRows, nCols = self._ws.shape()
+
+        aRow = self._ws._matrix[wId, :]
+        aRowSum = aRow.sum()
+        for i in range(nCols):
+            if (wId, i) not in self._sim:
+                if aRowSum == 0:
+                    sim = 0.0
+                else:
+                    sim = aRow[0, i] / aRowSum
+                self._sim[wId, i] = sim
+
 
 
 __all__ = ["CosSimilarity", "FirstOrderSimilarity"]

@@ -16,12 +16,6 @@ def _safe_divide(num, nparr):
     return nparr
 
 
-def _safe_log(sparse):
-    sparse.data[sparse.data <= 1] = 1
-    sparse.data = np.log(sparse.data)
-    sparse.eliminate_zeros()
-    return sparse
-
 class PMI:
     """
         PMI = log( p(c,w) / p(c)*p(w) )
@@ -50,28 +44,23 @@ class PMI:
         if self.smooth:
             row_sum = np.power(row_sum, SMOOTH_POWER)
 
-        res = matrix.multiply(row_sum).multiply(col_sum)
+        res = matrix.multiply(row_sum).multiply(col_sum).tocsr()
 
-        return res.tocsr()
-
-class PMI_log(PMI):
-    def __call__(self, matrix: csr_matrix):
-        res = super().__call__(matrix)
-        # res.data[res.data <= 1] = 1
         res.data = np.log(res.data)
-        print(f"Less than zero: {len(res.data[res.data < 0])}")
-        print(f"Greater than zero: {len(res.data[res.data > 0])}")
+        res.eliminate_zeros()
+
         return res
 
 class PPMI(PMI):
     def __call__(self, matrix: csr_matrix):
         res = super().__call__(matrix)
-        return _safe_log(res)
+        res[res < 0] = 0.0
+        return res
 
 def Normalize(matrix: csr_matrix):
     return normalize(matrix, axis=1)
 
-__all__ = ["PMI", "PPMI", "PMI_log"]
+__all__ = ["PMI", "PPMI"]
 
 if __name__ == '__main__':
     dok = dok_matrix((5, 5))
