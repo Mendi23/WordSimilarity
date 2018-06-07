@@ -98,7 +98,7 @@ class WordsSpace(object):
                               n - len(largest))
             largest += list(moreVals)
 
-        return [(hh[i], v) for i, v in largest]
+        return [hh[i] for i, v in largest]
 
     def get_sim(self, a, b, similarity: Similarity):
         hh = self._hashers[0]
