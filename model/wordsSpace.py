@@ -4,10 +4,9 @@ from collections import Counter, defaultdict
 from itertools import chain, islice
 
 import numpy as np
-from scipy.sparse import dok_matrix, save_npz, load_npz, csr_matrix
+from scipy.sparse import dok_matrix
 
 from model import hashing
-from model.modifiers import Norm
 from model.similarities import Similarity
 
 
@@ -31,7 +30,7 @@ class WordsSpace(object):
         self._hashers = hashers
 
         # matrix!
-        self.log(f"[init] creating matrix with {nRows} rows and {nCols} cols")
+        self.log(f"[init] creating matrix (shape: {nRows} x {nCols})")
 
         if matrix is not None:
             self._matrix = matrix
@@ -44,7 +43,7 @@ class WordsSpace(object):
                 i, j = (word, context) if counterHashed else (rh[word], ch[context])
                 self._matrix[i, j] = val
         self._matrix = self._matrix.tocsr()
-        self.apply_modifier(Norm)
+        self.log("Finish")
 
     @classmethod
     def build(cls, dataPath, rowsPath=None, colsPath=None):
@@ -102,13 +101,12 @@ class WordsSpace(object):
 
     def get_sim(self, a, b, similarity: Similarity):
         hh = self._hashers[0]
-        a, b = hh[a], hh[b]
 
-        return similarity(a, b, self._matrix, self._hashers)
+        return similarity(hh[a], hh[b], self._matrix, self._hashers)
 
     def apply_modifier(self, modifier):
         self._matrix = modifier(self._matrix)
 
     @staticmethod
     def log(message):
-        print(message)
+        print("|> WordsSpace: " + message)
