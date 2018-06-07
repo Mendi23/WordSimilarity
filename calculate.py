@@ -8,7 +8,7 @@ you need to run 2to3 script in the main folder with the flag "w" so the code wil
 
 import extruct_features as ef
 from helpers.measuretime import measure
-from model.modifiers import PMI, Norm
+from model.modifiers import PMI
 from model.similarities import *
 from model.wordsSpace import WordsSpace
 
@@ -40,23 +40,19 @@ def calculate_and_save(dataPath, rowsPath, colsPath, outfilePath):
     return words_space
 
 @measure
-def print_examples(filePath):
-    wordVecs = [load(sf) for sf in space_files]
-    for wv in wordVecs:
-        wv.apply_modifier(PMI)
-
+def print_examples(filePath, neighbours_iter):
     with open(filePath, "w", encoding="utf8") as f:
         for example in example_words:
             f.write("-"*80 + "\n")
             f.write(f"{example.decode('utf8'):>35}\n")
             f.write("-"*80 + "\n")
-            for x in _get_neighbours_iter(example, wordVecs):
+            for x in neighbours_iter(example):
                 f.write(" | ".join(f"{y[0].decode('utf8'):<14}" for y in x))
                 f.write("\n")
 
 
-def _get_neighbours_iter(word, wordSpaces):
-    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, CosSimilarity()) for sp in wordSpaces))
+def _get_neighbours_iter(word):
+    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, CosSimilarity()) for sp in wordVecs))
 
 @measure
 def tests(outfile_path):
@@ -73,10 +69,14 @@ if __name__ == '__main__':
     for out, rows, cols, space in aux_files:
         calculate_and_save(out, rows, cols, space)
 
-    for space in space_files:
-        tests(space)
+    wordVecs = [load(sf) for sf in space_files]
+    for wv in wordVecs:
+        wv.apply_modifier(PMI)
 
-    print_examples("sim_results.res")
+    # for space in space_files:
+    #     tests(space)
+
+    print_examples("sim_results.res", _get_neighbours_iter)
 
 
 

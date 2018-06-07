@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from calculate import example_words
+from calculate import print_examples
 
 
 def load_and_normalize_vectors(infile):
@@ -16,17 +16,6 @@ def load_and_normalize_vectors(infile):
     return np.array(W), np.array(words)
 
 
-def print_results(filePath):
-    with open(filePath, "w", encoding="utf8") as f:
-        for example in example_words:
-            f.write("-" * 80 + "\n")
-            f.write(f"{example.decode('utf8'):>35}\n")
-            f.write("-" * 80 + "\n")
-            for x in _get_neighbours_iter(example):
-                f.write(" | ".join(f"{y.decode('utf8'):<14}" for y in x))
-                f.write("\n")
-
-
 def _get_neighbours_iter(example):
     return zip(*(_get_neighbours(W, words, w2i, example, 20) for W, words, w2i in params))
 
@@ -34,7 +23,7 @@ def _get_neighbours_iter(example):
 def _get_neighbours(W, words, w2i, token, num_similiar):
     sim = W.dot(W[w2i[token]])
     simIds = sim.argsort()[-1:num_similiar * -1:-1]
-    return words[simIds]
+    return list(zip (words[simIds], sim[simIds]))
 
 
 if __name__ == '__main__':
@@ -46,4 +35,4 @@ if __name__ == '__main__':
 
     params = [(W_d, words_d, w2i_d), (W_b, words_b, w2i_b)]
 
-    print_results("word2vec.res")
+    print_examples("word2vec.res", _get_neighbours_iter)
