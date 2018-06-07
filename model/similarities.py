@@ -2,71 +2,67 @@ import abc
 import heapq
 from functools import lru_cache
 
-from scipy.sparse import dok_matrix, csr_matrix
+from scipy.sparse import csr_matrix
 import numpy as np
+from scipy.sparse.linalg import norm
 
 from model.hashing import MagicHash
 import typing
 
-
-def _getAbsRow(id, matrix: csr_matrix):
-    if id in _getAbsRow.cache:
-        return _getAbsRow.cache[id]
-
-    row = matrix.getrow(id)
-    s = row.power(2, dtype=np.int64).sum()
-    ret = _getAbsRow.cache[id] = np.sqrt(s)
-    return ret
-_getAbsRow.cache = {}
-
-def _getDot(id1, id2, matrix):
-    if (id1, id2) in _getDot.cahe:
-        return _getDot.cahe[(id1,id2)]
-
-    row1 = matrix.getrow(id1)
-    row2 = matrix.getrow(id2)
-    ret = _getDot.cahe[(id1, id2)] = row1.dot(row2.getH())[0,0]
-    return ret
-_getDot.cahe = {}
-
-def _getSum(id, matrix):
-    if id in _getDot.cahe:
-        return _getDot.cahe[id]
-
-    row = matrix.getrow(id)
-    ret = _getDot.cahe[id] = row.sum()
-    return ret
-_getSum.cahe = {}
-
 class Similarity:
+    def __init__(self):
+        self.c1 = {}
+        self.c2 = {}
+        self.c3 = {}
+
+    def _getNormRow(self, id, matrix: csr_matrix):
+        if id in self.c1:
+            return self.c1[id]
+
+        res = self.c1[id] = norm(matrix.getrow(id))
+        return res
+
+    def _getDot(self, id1, id2, matrix):
+        if (id1, id2) in self.c2:
+            return self.c2[(id1, id2)]
+
+        ret = self.c2[(id1, id2)] = matrix.getrow(id1).dot(matrix.getrow(id2).getH())[0, 0]
+        return ret
+
+    def _getSum(self, id, matrix):
+        if id in self.c3:
+            return self.c3[id]
+
+        ret = self.c3[id] = matrix.getrow(id).sum()
+        return ret
+
     def __call__(self, aId, bId,
                  matrix: csr_matrix,
                  hashers: typing.Tuple[MagicHash, MagicHash]):
         raise NotImplementedError()
 
-class Cossim(Similarity):
+class CosSimilarity(Similarity):
     def __call__(self, aId, bId,
                  matrix: csr_matrix,
                  hashers: typing.Tuple[MagicHash, MagicHash]):
-        dotted = _getDot(aId, bId, matrix)
-        row1abs = _getAbsRow(aId, matrix)
-        row2abs = _getAbsRow(bId, matrix)
 
-        return np.divide(dotted, (row1abs*row2abs))
+        return self._getDot(aId, bId, matrix)
+        # row1abs = self._getNormRow(aId, matrix)
+        # row2abs = self._getNormRow(bId, matrix)
 
-class FirstOrder(Similarity):
+        # return np.divide(dotted, (row1abs*row2abs))
+
+class FirstOrderSimilarity(Similarity):
     def __call__(self, aId, bId,
                  matrix: csr_matrix,
                  hashers: typing.Tuple[MagicHash, MagicHash]):
-        # Maybe we just can return `np.divide(abVal, aRow.sum())`
-        # but I don't know if this is consistent enough
         aRow = matrix.getrow(aId)
         bWord = hashers[0][bId]
         if bWord in hashers[1]:
             bColId = hashers[1][bWord]
             abVal = aRow[0, bColId]
-            return np.divide(abVal, _getSum(aId, matrix))
+            return np.divide(abVal, self._getSum(aId, matrix))
         return 0.0
 
 
-__all__ = ["Cossim", "FirstOrder"]
+__all__ = ["CosSimilarity", "FirstOrderSimilarity"]

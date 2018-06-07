@@ -6,13 +6,9 @@ after you downloaded the git folder and before instalation,
 you need to run 2to3 script in the main folder with the flag "w" so the code will be compatable
 """
 
-# from composes.semantic_space.space import Space
-# from composes.similarity.cos import CosSimilarity
-# from composes.utils import io_utils
-# from composes.transformation.scaling.ppmi_weighting import PpmiWeighting
-
 import extruct_features as ef
 from helpers.measuretime import measure
+from model.modifiers import PMI, Norm
 from model.similarities import *
 from model.wordsSpace import WordsSpace
 
@@ -46,6 +42,9 @@ def calculate_and_save(dataPath, rowsPath, colsPath, outfilePath):
 @measure
 def print_examples(filePath):
     wordVecs = [load(sf) for sf in space_files]
+    for wv in wordVecs:
+        wv.apply_modifier(PMI)
+
     with open(filePath, "w", encoding="utf8") as f:
         for example in example_words:
             f.write("-"*80 + "\n")
@@ -57,28 +56,27 @@ def print_examples(filePath):
 
 
 def _get_neighbours_iter(word, wordSpaces):
-    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, Cossim()) for sp in wordSpaces))
+    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, CosSimilarity()) for sp in wordSpaces))
 
 @measure
 def tests(outfile_path):
     words_space = load(outfile_path)
-    # words_space.apply(PpmiWeighting())
+    words_space.apply_modifier(PMI)
 
-    print(words_space.get_sim(b"bus", b"car", Cossim()))
-    print(words_space.get_sim(b"bus", b"car", FirstOrder()))
-    print(words_space.get_sim(b"dog", b"cat", Cossim()))
-    print(words_space.get_sim(b"dog", b"cat", FirstOrder()))
-    print(words_space.get_neighbours(b"dog", 20, FirstOrder()))
+    print(words_space.get_sim(b"bus", b"car", CosSimilarity()))
+    print(words_space.get_sim(b"dog", b"cat", CosSimilarity()))
+    print(words_space.get_neighbours(b"dog", 20, CosSimilarity()))
+    print(words_space.get_neighbours(b"bus", 20, CosSimilarity()))
 
 
 if __name__ == '__main__':
-    # for out, rows, cols, space in aux_files:
-    #     calculate_and_save(out, rows, cols, space)
+    for out, rows, cols, space in aux_files:
+        calculate_and_save(out, rows, cols, space)
 
     for space in space_files:
         tests(space)
 
-    # print_examples("sim_results.res")
+    print_examples("sim_results.res")
 
 
 

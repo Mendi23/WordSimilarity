@@ -7,6 +7,7 @@ import numpy as np
 from scipy.sparse import dok_matrix, save_npz, load_npz, csr_matrix
 
 from model import hashing
+from model.modifiers import Norm
 from model.similarities import Similarity
 
 
@@ -37,12 +38,13 @@ class WordsSpace(object):
             return
 
         rh, ch = self._hashers
-        self._matrix = dok_matrix(shape, dtype=np.int)
+        self._matrix = dok_matrix(shape, dtype=np.uint64)
         for word, contextWords in counter.items():
             for context, val in contextWords.items():
                 i, j = (word, context) if counterHashed else (rh[word], ch[context])
                 self._matrix[i, j] = val
         self._matrix = self._matrix.tocsr()
+        self.apply_modifier(Norm)
 
     @classmethod
     def build(cls, dataPath, rowsPath=None, colsPath=None):
