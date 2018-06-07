@@ -2,6 +2,7 @@ import heapq
 import pickle
 from collections import Counter, defaultdict
 from itertools import chain, islice
+from pprint import pprint
 
 import numpy as np
 from scipy.sparse import dok_matrix
@@ -37,7 +38,7 @@ class WordsSpace(object):
             return
 
         rh, ch = self._hashers
-        self._matrix = dok_matrix(shape, dtype=np.uint64)
+        self._matrix = dok_matrix(shape, dtype=np.int64)
         for word, contextWords in counter.items():
             for context, val in contextWords.items():
                 i, j = (word, context) if counterHashed else (rh[word], ch[context])
@@ -77,35 +78,27 @@ class WordsSpace(object):
         with open(filepath, "rb") as fin:
             return pickle.load(fin)
 
-    def get_neighbours(self, word, n, similarity: Similarity):
-        nRows, nCols = self._matrix.shape
+    def get_neighbours(self, word, n):
         hh = self._hashers[0]
-
         wordId = hh[word]
 
-        # get all sim values of the current word
-        simValues = ((i, similarity(wordId, i, self._matrix, self._hashers))
-                     for i in range(nRows))
-
-        # filter only the n-largest
-        largest = heapq.nlargest(n, simValues, key=lambda v: v[1])
-        keys = [l[0] for l in largest]
-
-        # if there is not enough - add zero similarities from remain column values
-        if len(largest) < n:
-            moreVals = islice(((i, 0.0) for i in range(nRows) if i not in keys),
-                              n - len(largest))
-            largest += list(moreVals)
+        largest = self._similarity.get_neighbours(n, wordId)
 
         return [hh[i] for i, v in largest]
 
-    def get_sim(self, a, b, similarity: Similarity):
+    def get_sim(self, a, b):
         hh = self._hashers[0]
 
-        return similarity(hh[a], hh[b], self._matrix, self._hashers)
+        return self._similarity.get_sim(hh[a], hh[b])
 
     def apply_modifier(self, modifier):
         self._matrix = modifier(self._matrix)
+        pprint(self._matrix[:100, :100])
+        print(self._matrix[:100, :100].todense())
+
+    def apply_similarity(self, similarity: Similarity):
+        self._similarity = similarity
+        similarity.precalculate(self._matrix)
 
     @staticmethod
     def log(message):

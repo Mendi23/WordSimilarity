@@ -8,7 +8,7 @@ you need to run 2to3 script in the main folder with the flag "w" so the code wil
 
 import extruct_features as ef
 from helpers.measuretime import measure
-from model.modifiers import PMI
+from model.modifiers import *
 from model.similarities import *
 from model.wordsSpace import WordsSpace
 
@@ -61,26 +61,31 @@ def _get_neighbours_iter(word):
 @measure
 def tests(outfile_path):
     words_space = load(outfile_path)
-    words_space.apply_modifier(PMI)
+    # words_space.apply_modifier(PMI_log())
 
-    print(words_space.get_sim(b"bus", b"car", CosSimilarity()))
-    print(words_space.get_sim(b"dog", b"cat", CosSimilarity()))
-    print(words_space.get_neighbours(b"dog", 20, CosSimilarity()))
-    print(words_space.get_neighbours(b"bus", 20, CosSimilarity()))
+    words_space.apply_similarity(CosSimilarity())
+    print(words_space.get_sim(b"bus", b"car"))
+    print(words_space.get_sim(b"dog", b"cat"))
+    print(words_space.get_neighbours(b"dog", 20))
+    print(words_space.get_neighbours(b"bus", 20))
+
+    words_space.apply_similarity(FirstOrderSimilarity())
+    print(words_space.get_neighbours(b"dog", 20))
+    print(words_space.get_neighbours(b"bus", 20))
 
 
 if __name__ == '__main__':
-    for out, rows, cols, space in aux_files:
-        calculate_and_save(out, rows, cols, space)
+    # for out, rows, cols, space in aux_files:
+    #     calculate_and_save(out, rows, cols, space)
 
-    wordVecs = [load(sf) for sf in space_files]
-    for wv in wordVecs:
-        wv.apply_modifier(PMI)
 
-    # for space in space_files:
-    #     tests(space)
+    for space in space_files:
+        tests(space)
 
-    print_examples("sim_results.res", _get_neighbours_iter, titles)
+    # wordVecs = [load(sf) for sf in space_files]
+    # for wv in wordVecs:
+    #     wv.apply_modifier(PMI)
+    # print_examples("sim_results.res", _get_neighbours_iter, titles)
 
 
 

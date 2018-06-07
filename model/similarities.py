@@ -1,10 +1,10 @@
 import abc
 import heapq
+from collections import defaultdict
 from functools import lru_cache
-from itertools import product
+from itertools import product, islice
 
 from scipy.sparse import csr_matrix, dok_matrix
-import numpy as np
 from scipy.sparse.linalg import norm
 
 from model import modifiers
@@ -13,55 +13,38 @@ import typing
 
 
 class Similarity:
-    # def __init__(self):
-    #     self.c1 = {}
-    #     self.c2 = {}
-    #     self.c3 = {}
-    #
-    # def _getNormRow(self, id, matrix: csr_matrix):
-    #     if id in self.c1:
-    #         return self.c1[id]
-    #
-    #     res = self.c1[id] = modifiers.Normalize(matrix[id, :])
-    #     return res
-    #
-    # def _getDot(self, id1, id2, matrix):
-    #     if (id1, id2) in self.c2:
-    #         return self.c2[(id1, id2)]
-    #
-    #     ret = self.c2[(id1, id2)] = matrix[id1, :].dot(matrix[id2, :].getH())[0, 0]
-    #     return ret
-    #
-    # def _getSum(self, id, matrix):
-    #     if id in self.c3:
-    #         return self.c3[id]
-    #
-    #     ret = self.c3[id] = matrix[id, :].sum()
-    #     return ret
+    def __init__(self):
+        self._sim = None
 
-    def __call__(self, aId, bId,
-                 matrix: csr_matrix,
-                 hashers: typing.Tuple[MagicHash, MagicHash]):
+    def get_sim(self, aId, bId):
+        return self._sim[aId, bId]
+
+    def get_neighbours(self, n, id):
+        numOfNeighbours = self._sim.shape[1]
+
+        # get all sim values of the current word
+        simValues = ((i, self._sim[id, i]) for i in range(numOfNeighbours))
+
+        # filter only the n-largest
+        largest = heapq.nlargest(n, (pair for pair in simValues if pair[1] != 0), key=lambda v: v[1])
+        keys = [l[0] for l in largest]
+
+        # if there is not enough - add zero similarities from remain column values
+        if len(largest) < n:
+            moreVals = islice(((i, 0.0) for i in range(numOfNeighbours) if i not in keys),
+                              n - len(largest))
+            largest += list(moreVals)
+
+        return largest
+
+    def precalculate(self, matrix):
         raise NotImplementedError()
 
 
 class CosSimilarity(Similarity):
-    def __init__(self):
-        super().__init__()
-        self._sim = None
-
-    def __call__(self, aId, bId,
-                 matrix: csr_matrix,
-                 hashers: typing.Tuple[MagicHash, MagicHash]):
-
-        if self._sim is None:
-            self._precalculate(matrix)
-
-        return self._sim[aId, bId]
-
-    def _precalculate(self, matrix):
+    def precalculate(self, matrix):
         nRows = matrix.shape[0]
-        self._sim = dok_matrix((nRows, nRows), dtype=matrix.dtype)
+        self._sim = defaultdict(int)
 
         normalized_mat = modifiers.Normalize(matrix)
 
@@ -79,38 +62,19 @@ class CosSimilarity(Similarity):
 
 
 class FirstOrderSimilarity(Similarity):
-    def __init__(self):
-        super().__init__()
-        self._sim = None
 
-    def __call__(self, aId, bId,
-                 matrix: csr_matrix,
-                 hashers: typing.Tuple[MagicHash, MagicHash]):
-
-        if self._sim is None:
-            self._precalculate(matrix, hashers[0], hashers[1])
-
-        return self._sim[aId, bId]
-
-    def _precalculate(self, matrix: csr_matrix, rowH, colH):
-        nRows = matrix.shape[0]
-        self._sim = dok_matrix((nRows, nRows), dtype=matrix.dtype)
+    def precalculate(self, matrix: csr_matrix):
+        nRows, nCols = matrix.shape
+        self._sim = defaultdict(int)
 
         for i in range(nRows):
             aRow = matrix[i, :]
             aRowSum = aRow.sum()
             if aRowSum == 0:
                 continue
-            for j in range(i, nRows):
-                bWord = rowH[j]
-                bColId = colH.data.get(bWord)
-                if bColId:
-                    sim = aRow[0, bColId] / aRowSum
-                    self._sim[i, j] = sim
-                    self._sim[j, i] = sim
-                else:
-                    print(f"no col for {bWord} (#{j})")
-                    input()
+            for j in range(nCols):
+                sim = aRow[0, j] / aRowSum
+                self._sim[i, j] = sim
 
 
 __all__ = ["CosSimilarity", "FirstOrderSimilarity"]
