@@ -30,8 +30,10 @@ aux_files = zip(vector_files, rows_files, cols_files, space_files)
 example_words = [b"car", b"bus", b"hospital", b"hotel", b"gun", b"bomb", b"horse", b"fox",
                  b"table", b"bowl", b"guitar", b"piano"]
 
+
 def load(outfile_path) -> WordsSpace:
     return WordsSpace.load(outfile_path)
+
 
 @measure
 def calculate_and_save(dataPath, rowsPath, colsPath, outfilePath):
@@ -40,16 +42,17 @@ def calculate_and_save(dataPath, rowsPath, colsPath, outfilePath):
     words_space.save(outfilePath)
     return words_space
 
+
 @measure
 def print_examples(filePath, neighbours_iter, titles):
     COL_WIDTH = 20
     with open(filePath, "w", encoding="utf8") as f:
         for example in example_words:
-            f.write("="*80 + "\n")
+            f.write("=" * 80 + "\n")
             f.write(f"{example.decode('utf8'):>35}\n")
-            f.write("="*80 + "\n")
+            f.write("=" * 80 + "\n")
             f.write(" | ".join(f"{title:^{COL_WIDTH}}" for title in titles))
-            f.write("-"*COL_WIDTH*len(titles) + "\n")
+            f.write("\n" + "-" * COL_WIDTH * len(titles) + "\n")
             for x in neighbours_iter(example):
                 f.write(" | ".join(f"{y.decode('utf8'):<{COL_WIDTH}}" for y in x))
                 f.write("\n")
@@ -57,6 +60,7 @@ def print_examples(filePath, neighbours_iter, titles):
 
 def _get_neighbours_iter(word):
     return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, CosSimilarity()) for sp in wordVecs))
+
 
 @measure
 def tests(outfile_path):
@@ -86,11 +90,3 @@ if __name__ == '__main__':
     # for wv in wordVecs:
     #     wv.apply_modifier(PMI)
     # print_examples("sim_results.res", _get_neighbours_iter, titles)
-
-
-
-
-
-
-
-

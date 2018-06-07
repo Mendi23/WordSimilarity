@@ -17,7 +17,8 @@ def load_and_normalize_vectors(infile):
 
 
 def _get_neighbours_iter(example):
-    return zip(*(_get_neighbours(W, words, w2i, example, 20) for W, words, w2i in params))
+    return zip(
+        *(_get_neighbours(W, words, w2i, example, NUM_NEIGHBOURS) for W, words, w2i in params))
 
 
 def _get_neighbours(W, words, w2i, token, num_similiar):
@@ -34,5 +35,14 @@ if __name__ == '__main__':
     w2i_b = {w: i for i, w in enumerate(words_b)}
 
     params = [(W_d, words_d, w2i_d), (W_b, words_b, w2i_b)]
+    NUM_NEIGHBOURS = 20
+    print_examples("word2vec_words.res", _get_neighbours_iter, ["dependency-based", "bag-of-words ["
+                                                                                    "k=5]"])
 
-    print_examples("word2vec.res", _get_neighbours_iter, ["dependency-based", "bag-of-words [k=5]"])
+    C_d, contexts_d = load_and_normalize_vectors('deps.contexts')
+    C_b, contexts_b = load_and_normalize_vectors('bow5.contexts')
+
+    params = [(C_d, contexts_d, w2i_d), (C_b, contexts_b, w2i_b)]
+    NUM_NEIGHBOURS = 10
+    print_examples("word2vec_contexts.res", _get_neighbours_iter, ["dependency-based",
+                                                                   "bag-of-words [k=5]"])
