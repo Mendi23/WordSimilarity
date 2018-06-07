@@ -24,6 +24,7 @@ vector_files = [ef.SENTENCE_OUT, ef.SKIPGRAM_OUT, ef.CONNECTORS_OUT][_L:_R]
 rows_files = [ef.SENTENCE_ROWS, ef.SKIPGRAM_ROWS, ef.CONNECTORS_ROWS][_L:_R]
 cols_files = [ef.SENTENCE_COLS, ef.SKIPGRAM_COLS, ef.CONNECTORS_COLS][_L:_R]
 space_files = [SENTENCE_SPACE, SKIPGRAM_SPACE, CONNECTORS_SPACE][_L:_R]
+titles = ["Sentence Context", "Skipgram (k=2)", "Dependency based"]
 aux_files = zip(vector_files, rows_files, cols_files, space_files)
 
 example_words = [b"car", b"bus", b"hospital", b"hotel", b"gun", b"bomb", b"horse", b"fox",
@@ -40,14 +41,17 @@ def calculate_and_save(dataPath, rowsPath, colsPath, outfilePath):
     return words_space
 
 @measure
-def print_examples(filePath, neighbours_iter):
+def print_examples(filePath, neighbours_iter, titles):
+    COL_WIDTH = 20
     with open(filePath, "w", encoding="utf8") as f:
         for example in example_words:
-            f.write("-"*80 + "\n")
+            f.write("="*80 + "\n")
             f.write(f"{example.decode('utf8'):>35}\n")
-            f.write("-"*80 + "\n")
+            f.write("="*80 + "\n")
+            f.write(" | ".join(f"{title:^{COL_WIDTH}}" for title in titles))
+            f.write("-"*COL_WIDTH*len(titles) + "\n")
             for x in neighbours_iter(example):
-                f.write(" | ".join(f"{y[0].decode('utf8'):<14}" for y in x))
+                f.write(" | ".join(f"{y.decode('utf8'):<{COL_WIDTH}}" for y in x))
                 f.write("\n")
 
 
@@ -76,7 +80,7 @@ if __name__ == '__main__':
     # for space in space_files:
     #     tests(space)
 
-    print_examples("sim_results.res", _get_neighbours_iter)
+    print_examples("sim_results.res", _get_neighbours_iter, titles)
 
 
 
