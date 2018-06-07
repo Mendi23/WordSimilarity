@@ -23,7 +23,7 @@ def _get_neighbours_iter(example):
 def _get_neighbours(W, words, w2i, token, num_similiar):
     sim = W.dot(W[w2i[token]])
     simIds = sim.argsort()[-1:num_similiar * -1:-1]
-    return list(zip (words[simIds], sim[simIds]))
+    return words[simIds]
 
 
 if __name__ == '__main__':
@@ -35,4 +35,4 @@ if __name__ == '__main__':
 
     params = [(W_d, words_d, w2i_d), (W_b, words_b, w2i_b)]
 
-    print_examples("word2vec.res", _get_neighbours_iter)
+    print_examples("word2vec.res", _get_neighbours_iter, ["dependency-based", "bag-of-words [k=5]"])
