@@ -77,15 +77,20 @@ class SentenceContext:
 
 class SkipGram:
     WINDOW = 2
+    FunctionWordsFilePath = "functionWords.data"
 
     def __init__(self, input_parsed):
+        funcWordsLines = (w.split('#', 1)[0].strip()
+                          for w in open(self.FunctionWordsFilePath).readlines())
+        self.excludeWords = [w for w in funcWordsLines if w]
+
         self.excludeTags = ["DT", "IN", "PRP$", "WP$", "$", "CC", "PRP"]
         self.iter = iter(input_parsed.iter_cols((2,3))).__iter__()
         self.cur = []
         self.index = 0
 
     def _is_function(self, w):
-        return w[1] in self.excludeTags
+        return w[1] in self.excludeTags or w[0] in self.excludeWords
 
     def _filter(self, sen):
         return islice(filterfalse(self._is_function, sen), self.WINDOW)
