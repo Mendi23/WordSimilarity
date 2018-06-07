@@ -13,6 +13,7 @@ you need to run 2to3 script in the main folder with the flag "w" so the code wil
 
 import extruct_features as ef
 from helpers.measuretime import measure
+from model.similarities import *
 from model.wordsSpace import WordsSpace
 
 NUM_NEIGHBOURS = 20
@@ -56,25 +57,26 @@ def print_examples(filePath):
 
 
 def _get_neighbours_iter(word, wordSpaces):
-    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, CosSimilarity()) for sp in wordSpaces))
+    return zip(*(sp.get_neighbours(word, NUM_NEIGHBOURS, Cossim()) for sp in wordSpaces))
 
 @measure
 def tests(outfile_path):
     words_space = load(outfile_path)
-    # print(words_space.cooccurrence_matrix[:2])
-    words_space.apply(PpmiWeighting())
-    # print(words_space.cooccurrence_matrix[:2])
+    # words_space.apply(PpmiWeighting())
 
-    print(words_space.get_sim(b"bus", b"car", CosSimilarity()))
-    print(words_space.get_sim(b"dog", b"cat", CosSimilarity()))
+    print(words_space.get_sim(b"bus", b"car", Cossim()))
+    print(words_space.get_sim(b"bus", b"car", FirstOrder()))
+    print(words_space.get_sim(b"dog", b"cat", Cossim()))
+    print(words_space.get_sim(b"dog", b"cat", FirstOrder()))
+    print(words_space.get_neighbours(b"dog", 20, FirstOrder()))
 
 
 if __name__ == '__main__':
-    for out, rows, cols, space in aux_files:
-        calculate_and_save(out, rows, cols, space)
+    # for out, rows, cols, space in aux_files:
+    #     calculate_and_save(out, rows, cols, space)
 
-    # for space in space_files:
-    #     tests(space)
+    for space in space_files:
+        tests(space)
 
     # print_examples("sim_results.res")
 
