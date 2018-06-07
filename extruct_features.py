@@ -2,7 +2,7 @@ from collections import defaultdict, Counter
 from functools import lru_cache
 from itertools import product, chain, filterfalse, islice
 
-from hashing import MagicHash
+from model.hashing import MagicHash
 from helpers.measuretime import measure
 from parsers import InputParser, store_list, store_cooccurrence
 
@@ -24,6 +24,7 @@ COOCCURRENCE_THRESHOLD = 5
 @lru_cache(maxsize=1)
 def getWrodCount():
     return Counter(InputParser().iter_all(2))
+
 
 def get_cooccurrence_from_iter(iterPairs):
     wordCounts = getWrodCount()
@@ -163,8 +164,8 @@ class Connectors:
 
 def main():
     create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_ROWS, SKIPGRAM_COLS, SkipGram)
-    create_store_space_params(CONNECTORS_OUT, CONNECTORS_ROWS, CONNECTORS_COLS, Connectors)
-    create_store_space_params(SENTENCE_OUT, SENTENCE_ROWS, SENTENCE_COLS, SentenceContext)
+    #create_store_space_params(CONNECTORS_OUT, CONNECTORS_ROWS, CONNECTORS_COLS, Connectors)
+    #create_store_space_params(SENTENCE_OUT, SENTENCE_ROWS, SENTENCE_COLS, SentenceContext)
 
     print(getWrodCount.cache_info())
 

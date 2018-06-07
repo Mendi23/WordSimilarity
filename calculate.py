@@ -6,15 +6,14 @@ after you downloaded the git folder and before instalation,
 you need to run 2to3 script in the main folder with the flag "w" so the code will be compatable
 """
 
-from composes.semantic_space.space import Space
-from composes.similarity.cos import CosSimilarity
-from composes.similarity.lin import LinSimilarity
-from composes.utils import io_utils
-from composes.transformation.scaling.ppmi_weighting import PpmiWeighting
+# from composes.semantic_space.space import Space
+# from composes.similarity.cos import CosSimilarity
+# from composes.utils import io_utils
+# from composes.transformation.scaling.ppmi_weighting import PpmiWeighting
 
-from hashing import WORDS_INDEX_PATH
 import extruct_features as ef
 from helpers.measuretime import measure
+from model.wordsSpace import WordsSpace
 
 NUM_NEIGHBOURS = 20
 
@@ -22,24 +21,25 @@ SENTENCE_SPACE = "sentence.space"
 SKIPGRAM_SPACE = "skipgram.space"
 CONNECTORS_SPACE = "connect.space"
 
-vector_files = [ef.SENTENCE_OUT, ef.SKIPGRAM_OUT, ef.CONNECTORS_OUT][1:]
-rows_files = [ef.SENTENCE_ROWS, ef.SKIPGRAM_ROWS, ef.CONNECTORS_ROWS][1:]
-cols_files = [ef.SENTENCE_COLS, ef.SKIPGRAM_COLS, ef.CONNECTORS_COLS][1:]
-space_files = [SENTENCE_SPACE, SKIPGRAM_SPACE, CONNECTORS_SPACE][1:]
+_L = 0
+_R = 3
+vector_files = [ef.SENTENCE_OUT, ef.SKIPGRAM_OUT, ef.CONNECTORS_OUT][_L:_R]
+rows_files = [ef.SENTENCE_ROWS, ef.SKIPGRAM_ROWS, ef.CONNECTORS_ROWS][_L:_R]
+cols_files = [ef.SENTENCE_COLS, ef.SKIPGRAM_COLS, ef.CONNECTORS_COLS][_L:_R]
+space_files = [SENTENCE_SPACE, SKIPGRAM_SPACE, CONNECTORS_SPACE][_L:_R]
 aux_files = zip(vector_files, rows_files, cols_files, space_files)
 
 example_words = [b"car", b"bus", b"hospital", b"hotel", b"gun", b"bomb", b"horse", b"fox",
                  b"table", b"bowl", b"guitar", b"piano"]
 
-def load(outfile_path) -> Space:
-    return io_utils.load(outfile_path)
+def load(outfile_path) -> WordsSpace:
+    return WordsSpace.load(outfile_path)
 
 @measure
 def calculate_and_save(dataPath, rowsPath, colsPath, outfilePath):
-    words_space = Space.build(data=dataPath,
-        rows=rowsPath, cols=colsPath, format="sm")
+    words_space = WordsSpace.build(dataPath, rowsPath, colsPath)
 
-    io_utils.save(words_space, outfilePath)
+    words_space.save(outfilePath)
     return words_space
 
 @measure
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     # for space in space_files:
     #     tests(space)
 
-    print_examples("sim_results.res")
+    # print_examples("sim_results.res")
 
 
 
