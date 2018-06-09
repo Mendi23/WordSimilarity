@@ -47,13 +47,14 @@ def calculate_space(dataPath, rowsPath, colsPath):
 @measure
 def print_examples(filePath, neighbours_iter, titles):
     COL_WIDTH = 20
+    LINE_WIDTH = 80
     with open(filePath, "w", encoding="utf8") as f:
         for example in example_words:
-            f.write("=" * 80 + "\n")
-            f.write(f"{example.decode('utf8'):>35}\n")
-            f.write("=" * 80 + "\n")
+            f.write("=" * LINE_WIDTH + "\n")
+            f.write(f"{example.decode('utf8'):^{LINE_WIDTH}}\n")
+            f.write("=" * LINE_WIDTH + "\n")
             f.write(" | ".join(f"{title:^{COL_WIDTH}}" for title in titles))
-            f.write("\n" + "-" * COL_WIDTH * len(titles) + "\n")
+            f.write("\n " + "-" * (COL_WIDTH) * len(titles) + "\n")
             for x in neighbours_iter(example):
                 f.write(" | ".join(f"{y.decode('utf8'):<{COL_WIDTH}}" for y in x))
                 f.write("\n")
@@ -90,6 +91,9 @@ if __name__ == '__main__':
     #     tests(space)
 
     wordVecs = [calculate_space(out, rows, cols) for out, rows, cols in aux_files]
+
+    similarities = [FirstOrderSimilarity(ws) for ws in wordVecs]
+    print_examples("sim_results.Contexts.res", _get_neighbours_iter, titles)
 
     for wv in wordVecs:
         wv.apply_modifier(PMI())

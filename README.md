@@ -1,15 +1,37 @@
 # Word_similarity
 
-> WTF? start:
->
-> that's bad english right here....
-> we did a quick check, and all sentences end with the pos-tag '.' which appear only in the end of a sentence. so we use it as stop word
->
-> WTF? end
+## Python version and libraries:
+
+ * We used Python 3.6
+ * Libraries:
+   * numpy
+   * sklearn
+   * scipy
 
 ## Run sequence:
 
- * `python hashing.py` in order to create word2index.data.out, words_count.data.out
- * `python extract_features.py` in order to create features files (for each context)
- * `sort skipgram.data.out | uniq -c | awk '{ print $2 "\t" $3 "\t" $1}' > skipgram_uniq.data.out`
- *
+ * `python extract_features.py` <br/>
+   In order to create features files (for each context). <br/>
+   Output files:
+
+        *.cols  -  context words
+        *.rows  -  target words
+        *.out   -  the actual data (counts for each pair)
+
+ * `python calculate.py` <br/>
+   In order to load the data into the matrix and calculate the similarities. <br/>
+   Output files:
+
+        sim_2ndOrder.res   -  second order results
+        sim_1stOrder.res   -  first order (contexts) results
+
+ * `python word2vec/word2vec_examples.py` <br/>
+   In order to run and calculate the output for word2vec. <br/>
+   **Attention:** word2vec expects those files to be at the root folder:
+   *deps.words, deps.contexts, bow5.words, bow5.contexts* <br/>
+   Output files:
+
+        word2vec_words.res
+        word2vec_contexts.res
+
+

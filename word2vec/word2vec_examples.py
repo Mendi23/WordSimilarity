@@ -23,7 +23,7 @@ def _get_neighbours_iter(example):
 
 def _get_neighbours(W, words, w2i, token, num_similiar):
     sim = W.dot(W[w2i[token]])
-    simIds = sim.argsort()[-1:num_similiar * -1:-1]
+    simIds = sim.argsort()[-1:(num_similiar+1) * -1:-1]
     return words[simIds]
 
 
