@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict, Counter
 from functools import lru_cache
 from itertools import product, chain, filterfalse, islice
@@ -173,4 +174,7 @@ def main():
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        InputParser.INPUT_FILE = sys.argv[1]
+
     main()

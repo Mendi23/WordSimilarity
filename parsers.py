@@ -1,15 +1,14 @@
 import itertools
 import numpy as np
 
-INPUT_FILE = "wikipedia.sample.trees.lemmatized"
-#INPUT_FILE = "wikipedia.tinysample.trees.lemmatized.txt"
-
 DELIM = '\t'
 
 class InputParser:
+    INPUT_FILE = "wikipedia.sample.trees.lemmatized"
+    # INPUT_FILE = "wikipedia.tinysample.trees.lemmatized.txt"
 
-    def __init__(self, inputFile=INPUT_FILE):
-        self.inputFile = inputFile
+    def __init__(self):
+        self.inputFile = InputParser.INPUT_FILE
 
     def iter_cols(self, cols, includePredicate = None):
         if not includePredicate:

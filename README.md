@@ -10,8 +10,9 @@
 
 ## Run sequence:
 
- * `python extract_features.py` <br/>
+ * `python extract_features.py input_file_name` <br/>
    In order to create features files (for each context). <br/>
+   *input_file_name* is "wikipedia.sample.trees.lemmatized" if not argument is given.<br/>
    Output files:
 
         *.cols  -  context words
