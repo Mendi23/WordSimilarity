@@ -51,23 +51,7 @@ def store_cooccurrence(filePath, counts):
                 f.write(f"{word}{DELIM}{context}{DELIM}{count}\n")
 
 
-
-
-
-
-
-
-#
-# def store_dict(dictToStore:{}, filePath):
-#     with open(filePath, "w", encoding="utf8") as f:
-#         for key, val in dictToStore.items():
-#             f.write(f"{key}{DELIM}{val}\n")
-
-#
-# def load_dict(filePath, modifier=None):
-#     if not modifier:
-#         modifier = lambda x: x
-#     with open(filePath, "r", encoding="utf8") as f:
-#         lines = (line.strip().split(DELIM) for line in f)
-#         return {pair[0]: modifier(pair[1]) for pair in lines if pair}
-
+word = wordLines[25 * i:25 * (i + 1)]
+print(word[1].strip())
+t = [[p.strip()] for p in word[5].split("|")]
+print(t)

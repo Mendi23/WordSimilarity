@@ -3,7 +3,6 @@ from functools import lru_cache
 from itertools import product, chain, filterfalse, islice
 
 from model.hashing import MagicHash
-from helpers.measuretime import measure
 from parsers import InputParser, store_list, store_cooccurrence
 
 SENTENCE_OUT = "sentence.out"
@@ -20,14 +19,13 @@ LEMMA_THRESHOLD = 100
 FEATURE_THRESHOLD = 100
 COOCCURRENCE_THRESHOLD = 5
 
-
 @lru_cache(maxsize=1)
-def getWrodCount():
+def getWordCount():
     return Counter(InputParser().iter_all(2))
 
 
 def get_cooccurrence_from_iter(iterPairs):
-    wordCounts = getWrodCount()
+    wordCounts = getWordCount()
     mhash = MagicHash()
     tempCooDict = defaultdict(Counter)
     for word, context in iterPairs:
@@ -44,7 +42,6 @@ def get_cooccurrence_from_iter(iterPairs):
            frozenset(chain.from_iterable(keyVal.keys() for keyVal in cooccurrences.values()))
 
 
-@measure
 def create_store_space_params(vectorsFile, rowsFile, colsFile, contextIterator):
     input_parsed = InputParser()
     cooccurrence, rows, cols = get_cooccurrence_from_iter(contextIterator(input_parsed))
@@ -169,10 +166,10 @@ class Connectors:
 
 def main():
     create_store_space_params(SKIPGRAM_OUT, SKIPGRAM_ROWS, SKIPGRAM_COLS, SkipGram)
-    #create_store_space_params(CONNECTORS_OUT, CONNECTORS_ROWS, CONNECTORS_COLS, Connectors)
-    #create_store_space_params(SENTENCE_OUT, SENTENCE_ROWS, SENTENCE_COLS, SentenceContext)
+    create_store_space_params(CONNECTORS_OUT, CONNECTORS_ROWS, CONNECTORS_COLS, Connectors)
+    create_store_space_params(SENTENCE_OUT, SENTENCE_ROWS, SENTENCE_COLS, SentenceContext)
 
-    print(getWrodCount.cache_info())
+    #print(getWordCount.cache_info())
 
 
 if __name__ == '__main__':
