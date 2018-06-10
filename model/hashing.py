@@ -1,7 +1,6 @@
 from collections import defaultdict, UserDict
 from itertools import count
 
-from helpers.measuretime import measure
 from parsers import store_list, load_list
 
 WORDS_INDEX_PATH = "words2index.data.out"
@@ -47,7 +46,6 @@ def get_transform_sentences(wordsDict, input_parsed):
         yield transform_line(line, wordsDict)
 
 
-@measure
 def load_words2index(filePath):
     words = load_list(filePath)
     return MagicHash.create_from_keys(words)

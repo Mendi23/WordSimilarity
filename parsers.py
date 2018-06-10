@@ -50,8 +50,3 @@ def store_cooccurrence(filePath, counts):
             for context, count in contextCounts.items():
                 f.write(f"{word}{DELIM}{context}{DELIM}{count}\n")
 
-
-word = wordLines[25 * i:25 * (i + 1)]
-print(word[1].strip())
-t = [[p.strip()] for p in word[5].split("|")]
-print(t)

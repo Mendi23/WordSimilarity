@@ -1,13 +1,4 @@
-"""
-you need to download the package and install it yourself.
-follow the instructions from this link:
-http://clic.cimec.unitn.it/composes/toolkit/installation.html
-after you downloaded the git folder and before instalation,
-you need to run 2to3 script in the main folder with the flag "w" so the code will be compatable
-"""
-
 import extruct_features as ef
-from helpers.measuretime import measure
 from model.modifiers import *
 from model.similarities import *
 from model.wordsSpace import WordsSpace
@@ -39,12 +30,10 @@ def save(outfilePath, spaceToSave):
     spaceToSave.save(outfilePath)
 
 
-@measure
 def calculate_space(dataPath, rowsPath, colsPath):
     return WordsSpace.build(dataPath, rowsPath, colsPath)
 
 
-@measure
 def print_examples(filePath, neighbours_iter, titles):
     COL_WIDTH = 20
     LINE_WIDTH = 80
@@ -65,7 +54,6 @@ def _get_neighbours_iter(word):
 
 
 #
-# @measure
 # def tests(outfile_path):
 #     words_space = load(outfile_path)
 #     words_space.apply_modifier(PMI())
@@ -91,9 +79,6 @@ if __name__ == '__main__':
     #     tests(space)
 
     wordVecs = [calculate_space(out, rows, cols) for out, rows, cols in aux_files]
-
-    similarities = [FirstOrderSimilarity(ws) for ws in wordVecs]
-    print_examples("sim_results.Contexts.res", _get_neighbours_iter, titles)
 
     for wv in wordVecs:
         wv.apply_modifier(PMI())

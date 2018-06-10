@@ -1,7 +1,6 @@
 import pickle
 from collections import Counter, defaultdict
 from itertools import chain
-from pprint import pprint
 
 import numpy as np
 from scipy.sparse import dok_matrix
@@ -93,4 +92,5 @@ class WordsSpace(object):
 
     @staticmethod
     def log(message):
-        print("|> WordsSpace: " + message)
+        pass
+        #print("|> WordsSpace: " + message)
